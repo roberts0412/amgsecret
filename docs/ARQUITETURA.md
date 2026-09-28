@@ -200,13 +200,42 @@ ver o resultado), e-mail/SMS (custo/serviço externo), passkeys (UX difícil).
   Server Action autenticada quando a pessoa toca "Revelar" (não fica no HTML,
   cache ou prévias). O organizador vê apenas quantos já revelaram.
 
-## 9. Monetização (preparação)
+## 9. Monetização
 
-- `Group.plan` + módulo `lib/plans` com limites/recursos por plano
-  (`maxParticipants`, `themes`, `adsEnabled`...).
-- Componente `<AdSlot/>` que não renderiza nada enquanto anúncios estiverem
-  desligados; nunca em páginas com dado secreto.
-- Sem pagamento por enquanto.
+**Anúncios discretos (implementado):** `src/components/ad-slot.tsx` + `src/lib/ads.ts`.
+- No máximo **1 espaço por página**, pequeno (100 px de altura fixa, sem
+  "pulo" de layout), no fim do conteúdo, marcado "Publicidade". Sem pop-up,
+  sem anúncio fixo na tela, sem intersticial.
+- Hoje em: início e página do grupo (inclusive as páginas de SEO, quando
+  existirem). **Nunca** em: minha área, amigo secreto, link privado,
+  recuperação, criar grupo, painel do organizador.
+- Script de anúncio é código de terceiros com acesso à página: por isso a
+  página do grupo não contém nenhum segredo (link privado/PIN/pares ficam
+  em `/eu`). Ele consegue ler nomes e o mural do grupo — trade-off aceito.
+- Google AdSense via `ADSENSE_CLIENT_ID` + `ADSENSE_SLOT_ID` (validados por
+  regex). Sem eles: nada em produção, marcador tracejado em desenvolvimento.
+  `/ads.txt` gerado automaticamente. A home é estática: as variáveis precisam
+  existir também no momento do build.
+- Grupos `PREMIUM` não exibem anúncios (`lib/plans.ts`).
+- Pendente para produção: banner de consentimento de cookies (LGPD / política
+  do Google para anúncios personalizados).
+
+**Preparado (sem pagamento ainda):** `Group.plan` (FREE/PREMIUM), limites por
+plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
+
+## 5b. Lista de desejos, mensagens e mural (Etapa 5)
+
+- **Lista de desejos (opcional)**: até 20 itens; produto, descrição, preço
+  aproximado, link (só http/https; `javascript:`/`data:` recusados) e
+  observação. Antes do sorteio só o dono vê; depois, só o dono e quem o tirou
+  (`getFriendWishes` não recebe id: deriva do sorteio da sessão).
+- **Mensagens secretas**: quem tirou manda anônimo; quem recebeu pode
+  responder sem descobrir quem é. A tabela guarda só o destinatário + HMAC do
+  remetente + direção; o destinatário vê só o **dia** (não o horário, que
+  poderia denunciar o remetente). Limite de 50 por pessoa por sorteio.
+  Refazer/reabrir o sorteio apaga as conversas.
+- **Mural**: não anônimo, só para participantes; autor apaga o próprio,
+  organizador oculta qualquer um.
 
 ## 10. Etapas
 
@@ -216,8 +245,8 @@ ver o resultado), e-mail/SMS (custo/serviço externo), passkeys (UX difícil).
 | 2 | Next.js + Prisma: schema, migrações, cliente, criptografia dos pares | ✅ |
 | 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | ✅ |
 | 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | ✅ |
-| 5 | Lista de desejos, mensagens secretas, mural | ⏳ |
-| 6 | Design mobile-first + botão "Compartilhar no WhatsApp" | |
+| 5 | Lista de desejos (opcional), mensagens secretas, mural + anúncios discretos | ✅ |
+| 6 | Design mobile-first + botão "Compartilhar no WhatsApp" | ⏳ |
 | 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | |
 | 8 | Monetização (planos/ad slots) + revisão de segurança + E2E | |
 

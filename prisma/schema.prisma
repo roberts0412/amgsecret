@@ -39,6 +39,12 @@ enum ParticipantRole {
   MEMBER
 }
 
+/// Direção da mensagem secreta, do ponto de vista do DESTINATÁRIO.
+enum MessageDirection {
+  FROM_SANTA // de quem me tirou (anônimo para mim)
+  FROM_FRIEND // de quem eu tirei, respondendo (eu já sei quem é)
+}
+
 enum DrawStatus {
   ACTIVE
   INVALIDATED
@@ -180,16 +186,17 @@ model WishlistItem {
 
 /// Mensagem anônima do amigo secreto para quem ele tirou.
 model SecretMessage {
-  id           String      @id @default(cuid())
+  id           String           @id @default(cuid())
   drawId       String
-  draw         Draw        @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  draw         Draw             @relation(fields: [drawId], references: [id], onDelete: Cascade)
   recipientId  String
-  recipient    Participant @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipient    Participant      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
   /// HMAC-SHA256(drawId, senderId) — permite ao remetente ver o que enviou
   /// e aplicar limites, sem gravar o remetente em claro.
-  senderLookup String      @db.Char(64)
-  body         String      @db.VarChar(1000)
-  createdAt    DateTime    @default(now())
+  senderLookup String           @db.Char(64)
+  direction    MessageDirection @default(FROM_SANTA)
+  body         String           @db.VarChar(1000)
+  createdAt    DateTime         @default(now())
 
   @@index([drawId, recipientId])
   @@index([drawId, senderLookup])

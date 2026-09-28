@@ -7,7 +7,11 @@ import {
   joinGroupSchema,
   parseBRLToCents,
   parseInput,
+  normalizeProductUrl,
   recoverAccessSchema,
+  secretMessageSchema,
+  wallPostSchema,
+  wishSchema,
   todayInEventTz,
 } from "./validation";
 
@@ -178,5 +182,51 @@ describe("PIN nos formulários", () => {
   it("recuperação só checa o formato", () => {
     expect(parseInput(recoverAccessSchema, { name: " maria ", pin: "123456" })).toEqual({ name: "maria", pin: "123456" });
     expect(() => parseInput(recoverAccessSchema, { name: "Maria", pin: "12a456" })).toThrow(AppError);
+  });
+});
+
+describe("normalizeProductUrl", () => {
+  it.each([
+    ["https://loja.com/fone", "https://loja.com/fone"],
+    ["http://loja.com.br/x?y=1", "http://loja.com.br/x?y=1"],
+    ["www.loja.com/fone", "https://www.loja.com/fone"],
+    ["  https://LOJA.com  ", "https://loja.com/"],
+  ])("%s -> %s", (input, out) => expect(normalizeProductUrl(input)).toBe(out));
+
+  it.each([
+    "javascript:alert(1)",
+    "JAVASCRIPT:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "file:///etc/passwd",
+    "vbscript:msgbox",
+    "https://user:senha@loja.com",
+    "https://localhost/x",
+    "https://loja .com",
+    "",
+    `https://loja.com/${"a".repeat(2050)}`,
+  ])("recusa %j", (input) => expect(normalizeProductUrl(input)).toBeNull());
+});
+
+describe("wishSchema / mensagens", () => {
+  it("desejo mínimo e completo", () => {
+    expect(parseInput(wishSchema, { product: "Fone Bluetooth" })).toEqual({ product: "Fone Bluetooth" });
+    expect(
+      parseInput(wishSchema, { product: " Fone ", approxPrice: "R$ 150", url: "loja.com/fone", note: "preto", description: "" }),
+    ).toEqual({ product: "Fone", approxPrice: 15000, url: "https://loja.com/fone", note: "preto" });
+  });
+
+  it("recusa link perigoso com mensagem no campo", () => {
+    try {
+      parseInput(wishSchema, { product: "X Y", url: "javascript:alert(1)" });
+      throw new Error("deveria falhar");
+    } catch (e) {
+      expect((e as AppError).fieldErrors?.url).toMatch(/Link inválido/);
+    }
+  });
+
+  it("mensagens: vazias recusadas, limites de tamanho", () => {
+    expect(() => parseInput(secretMessageSchema, { body: " \n " })).toThrow(AppError);
+    expect(parseInput(secretMessageSchema, { body: " Oi!\n\n\n\nTudo bem? " }).body).toBe("Oi!\n\nTudo bem?");
+    expect(() => parseInput(wallPostSchema, { body: "x".repeat(501) })).toThrow(AppError);
   });
 });

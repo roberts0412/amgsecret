@@ -18,6 +18,15 @@ const schema = z.object({
    * que define X-Forwarded-For/X-Real-IP. Sem proxy, esses cabeçalhos são
    * forjáveis pelo cliente e não podem ser usados no rate limiting.
    */
+  /** Google AdSense (opcional). Sem estes dois, nenhum anúncio é exibido. */
+  ADSENSE_CLIENT_ID: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().regex(/^ca-pub-\d{10,20}$/, "ADSENSE_CLIENT_ID deve ser como ca-pub-1234567890123456").optional(),
+  ),
+  ADSENSE_SLOT_ID: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().regex(/^\d{5,20}$/, "ADSENSE_SLOT_ID deve ser numérico").optional(),
+  ),
   TRUST_PROXY: z
     .enum(["true", "false"])
     .default("false")

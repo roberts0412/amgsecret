@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdSlot } from "@/components/ad-slot";
 import { GoToGroupForm } from "@/components/forms";
 import { btn, Card, PageShell } from "@/components/ui";
 
@@ -27,6 +28,8 @@ export default function HomePage() {
         <li>📝 Lista de desejos e mensagens anônimas</li>
         <li>📱 Feito para o celular, sem cadastro</li>
       </ul>
+
+      <AdSlot />
     </PageShell>
   );
 }

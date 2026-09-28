@@ -29,6 +29,8 @@ export const RATE_LIMITS = {
   lookupGroup: { limit: 60, windowSec: 10 * 60 },
   organizerAction: { limit: 120, windowSec: 10 * 60 },
   participantAction: { limit: 60, windowSec: 10 * 60 },
+  sendMessage: { limit: 30, windowSec: 10 * 60 },
+  wallPost: { limit: 20, windowSec: 10 * 60 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitAction = keyof typeof RATE_LIMITS;

@@ -237,6 +237,66 @@ export type GroupDetailsInput = z.infer<ReturnType<typeof groupDetailsSchema>>;
 export type CreateGroupInput = z.infer<ReturnType<typeof createGroupSchema>>;
 export type JoinGroupInput = z.infer<typeof joinGroupSchema>;
 
+// ---------------------------------------------------------------------------
+// Lista de desejos, mensagens e mural
+// ---------------------------------------------------------------------------
+
+/**
+ * Normaliza um link de produto. Só http/https (bloqueia javascript:, data:,
+ * file: etc.), sem usuário/senha embutidos, até 2048 caracteres.
+ * Aceita "www.loja.com/x" (acrescenta https://). Retorna null se inválido.
+ */
+export function normalizeProductUrl(input: string): string | null {
+  let raw = input.trim();
+  if (raw === "" || raw.length > 2048 || /\s/.test(raw)) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = `https://${raw}`;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+  if (url.username || url.password) return null;
+  if (!url.hostname.includes(".")) return null;
+  const out = url.toString();
+  return out.length <= 2048 ? out : null;
+}
+
+const optionalUrl = z.preprocess(
+  blankToUndefined,
+  z
+    .string()
+    .transform((v, ctx) => {
+      const url = normalizeProductUrl(v);
+      if (!url) {
+        ctx.addIssue({ code: "custom", message: "Link inválido. Use um endereço como https://loja.com/produto." });
+        return z.NEVER;
+      }
+      return url;
+    })
+    .optional(),
+);
+
+export const wishSchema = z.object({
+  product: line(2, 100, "o produto"),
+  description: optionalMultiline(500, "a descrição"),
+  approxPrice: optionalMoney,
+  url: optionalUrl,
+  note: optionalMultiline(300, "a observação"),
+});
+
+const messageBody = (max: number) =>
+  z
+    .string({ error: "Escreva uma mensagem." })
+    .transform(cleanMultiline)
+    .pipe(z.string().min(1, "Escreva uma mensagem.").max(max, `A mensagem pode ter no máximo ${max} caracteres.`));
+
+export const secretMessageSchema = z.object({ body: messageBody(1000) });
+export const wallPostSchema = z.object({ body: messageBody(500) });
+
+export type WishInput = z.infer<typeof wishSchema>;
+
 /**
  * Valores seguros para devolver ao formulário após erro: nunca devolve PINs
  * (eles iriam parar no HTML/payload da página).

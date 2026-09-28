@@ -131,7 +131,7 @@ export async function recoverAccessAction(_prev: ActionState, form: FormData): P
     const r = await recoverAccess(getDb(), code, input);
     await setSessionCookie(r.code, r.token);
   }, echoableValues(values));
-  if (state.ok) redirect(`/grupo/${code}?recuperado=1`);
+  if (state.ok) redirect(`/grupo/${code}/eu?recuperado=1`);
   return state;
 }
 

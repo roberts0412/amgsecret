@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { logoutAction } from "@/actions/groups";
-import { ConfirmParticipationForm, CopyButton, JoinGroupForm, SetPinForm } from "@/components/forms";
+import { AdSlot } from "@/components/ad-slot";
+import { ConfirmParticipationForm, CopyButton, JoinGroupForm } from "@/components/forms";
+import { WallPostForm } from "@/components/social-forms";
+import { Wall } from "@/components/social-views";
 import { Alert, btn, Card, CardTitle, ExternalLink, PageShell, StatusBadge } from "@/components/ui";
-import { getSession, getSessionToken } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
 import { formatCents, formatWhen } from "@/lib/format";
 import { getPublicGroupView } from "@/lib/services/groups";
 import { hasPin } from "@/lib/services/participants";
+import { listWall } from "@/lib/services/social";
 import { groupUrl, inviteMessage, whatsappShareUrl } from "@/lib/share";
 
 type Props = { params: Promise<{ code: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -26,6 +29,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/**
+ * Página do grupo. ATENÇÃO: esta página exibe anúncio (script de terceiros),
+ * então NÃO pode conter segredos: nada de token/link privado, PIN ou pares.
+ * Tudo isso fica em /grupo/<código>/eu (sem anúncios).
+ */
 export default async function GroupPage({ params, searchParams }: Props) {
   const { code: rawCode } = await params;
   const group = await getPublicGroupView(getDb(), rawCode);
@@ -35,23 +43,24 @@ export default async function GroupPage({ params, searchParams }: Props) {
 
   const sp = await searchParams;
   const me = await getSession(code);
-  const token = me ? await getSessionToken(code) : null;
-  const meHasPin = me ? await hasPin(getDb(), me) : false;
-  const { APP_URL } = getEnv();
-  const publicUrl = groupUrl(APP_URL, code);
-  const privateUrl = token ? new URL(`/acesso/${token}`, APP_URL).toString() : null;
+  const [meHasPin, wall] = me ? await Promise.all([hasPin(getDb(), me), listWall(getDb(), me)]) : [false, []];
+  const publicUrl = groupUrl(getEnv().APP_URL, code);
   const when = formatWhen(group.eventDate, group.eventTime);
   const pending = group.participants.length - group.confirmedCount;
 
   return (
     <PageShell>
       {me && sp.novo === "1" && me.role === "ORGANIZER" && (
-        <Alert tone="success">Grupo criado! 🎉 Agora convide a galera pelo WhatsApp.</Alert>
+        <Alert tone="success">
+          Grupo criado! 🎉 Convide a galera pelo WhatsApp e{" "}
+          <Link href={`/grupo/${code}/eu`} className="font-semibold underline">guarde seu link privado</Link>.
+        </Alert>
       )}
       {me && sp.entrou === "1" && <Alert tone="success">Você entrou no grupo! Confirme sua participação abaixo.</Alert>}
-      {me && sp.recuperado === "1" && (
-        <Alert tone="success">
-          Acesso recuperado! 🔑 Seu link privado mudou — o antigo não funciona mais. Guarde o novo (abaixo).
+      {me && !meHasPin && (
+        <Alert>
+          🔒 Você ainda não tem PIN de recuperação.{" "}
+          <Link href={`/grupo/${code}/eu`} className="font-semibold underline">Criar agora</Link>
         </Alert>
       )}
 
@@ -99,21 +108,21 @@ export default async function GroupPage({ params, searchParams }: Props) {
             <p className="text-slate-700">Sua participação está confirmada ✓ Aguarde o sorteio.</p>
           )}
           {me.status === "CONFIRMED" && group.status === "DRAWN" && (
-            <>
-              <p className="mb-3 text-slate-700">O sorteio foi feito! 🎉</p>
-              <Link href={`/grupo/${code}/eu`} className={btn.primary}>
-                🎁 Ver meu amigo secreto
-              </Link>
-            </>
+            <p className="text-slate-700">O sorteio foi feito! 🎉</p>
           )}
           {me.status === "INVITED" && group.status === "DRAWN" && (
             <p className="text-slate-700">O sorteio foi feito antes da sua confirmação. Fale com o organizador.</p>
           )}
-          {me.role === "ORGANIZER" && (
-            <Link href={`/grupo/${code}/admin`} className={`${btn.secondary} mt-3`}>
-              ⚙️ Painel do organizador
+          <div className="mt-3 flex flex-col gap-2">
+            <Link href={`/grupo/${code}/eu`} className={group.status === "DRAWN" ? btn.primary : btn.secondary}>
+              {group.status === "DRAWN" ? "🎁 Ver meu amigo secreto" : "👤 Minha área: desejos e link privado"}
             </Link>
-          )}
+            {me.role === "ORGANIZER" && (
+              <Link href={`/grupo/${code}/admin`} className={btn.secondary}>
+                ⚙️ Painel do organizador
+              </Link>
+            )}
+          </div>
         </Card>
       ) : group.status === "OPEN" ? (
         <Card>
@@ -134,16 +143,6 @@ export default async function GroupPage({ params, searchParams }: Props) {
           </Link>
           .
         </Alert>
-      )}
-
-      {me && !meHasPin && (
-        <Card highlight>
-          <CardTitle>🔒 Crie seu PIN de recuperação</CardTitle>
-          <p className="mb-3 text-sm text-slate-700">
-            Sem PIN, se você perder o link não será possível recuperar o acesso.
-          </p>
-          <SetPinForm code={code} hasPin={false} />
-        </Card>
       )}
 
       {me && (
@@ -180,40 +179,17 @@ export default async function GroupPage({ params, searchParams }: Props) {
         </p>
       </Card>
 
-      {me && privateUrl && (
-        <Card highlight>
-          <CardTitle>🔑 Seu link privado</CardTitle>
-          <p className="mb-3 text-sm text-slate-700">
-            É a sua chave para ver quem você tirou, neste ou em outro celular. <strong>Guarde e não compartilhe.</strong>
-          </p>
-          <div className="flex flex-col gap-2">
-            <CopyButton text={privateUrl} label="Copiar meu link privado" />
-            <ExternalLink
-              href={whatsappShareUrl(`🔑 Meu link privado do amigo secreto "${group.name}" (não compartilhe):\n${privateUrl}`)}
-              className={btn.secondary}
-            >
-              Salvar no meu WhatsApp
-            </ExternalLink>
-            <p className="text-xs text-slate-500">
-              Dica: no WhatsApp, envie para você mesmo (&quot;Você&quot; no topo da lista de contatos).
-            </p>
+      {me && (
+        <Card>
+          <CardTitle>💬 Mural do grupo</CardTitle>
+          <div className="flex flex-col gap-4">
+            <WallPostForm code={code} />
+            <Wall posts={wall} code={code} />
           </div>
-          {meHasPin && (
-            <details className="mt-3">
-              <summary className="cursor-pointer text-sm text-slate-600">Trocar meu PIN</summary>
-              <div className="mt-3">
-                <SetPinForm code={code} hasPin />
-              </div>
-            </details>
-          )}
-          <form action={logoutAction} className="mt-3 text-center">
-            <input type="hidden" name="code" value={code} />
-            <button type="submit" className="text-sm text-slate-500 underline">
-              Sair deste aparelho
-            </button>
-          </form>
         </Card>
       )}
+
+      <AdSlot plan={group.plan} />
     </PageShell>
   );
 }

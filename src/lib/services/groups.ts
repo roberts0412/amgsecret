@@ -1,5 +1,5 @@
 import "server-only";
-import type { GroupStatus, ParticipantRole, ParticipantStatus } from "@/generated/prisma/enums";
+import type { GroupStatus, ParticipantRole, ParticipantStatus, Plan } from "@/generated/prisma/enums";
 import { AppError } from "@/lib/errors";
 import { planFeatures } from "@/lib/plans";
 import { hashPin } from "@/lib/security/pin";
@@ -80,6 +80,7 @@ export interface PublicGroupView {
   location: string | null;
   giftValueCents: number | null;
   status: GroupStatus;
+  plan: Plan;
   participants: PublicParticipant[];
   confirmedCount: number;
 }
@@ -95,7 +96,7 @@ export async function getPublicGroupView(db: Db, rawCode: string): Promise<Publi
     where: { code },
     select: {
       code: true, name: true, description: true, eventDate: true, eventTime: true,
-      location: true, giftValueCents: true, status: true,
+      location: true, giftValueCents: true, status: true, plan: true,
       participants: {
         where: { status: { not: "REMOVED" } },
         orderBy: { createdAt: "asc" },

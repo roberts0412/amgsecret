@@ -117,6 +117,10 @@ test("fluxo completo: criar, entrar, confirmar, acompanhar e remover", async ({ 
 test("link privado abre a conta em outro aparelho (com confirmação)", async ({ browser }) => {
   const org = await newPhone(browser);
   const code = await createGroup(org.page, "Firma");
+  // a página do grupo (que tem anúncio) NÃO contém o link privado
+  expect(await (await org.page.request.get(`/grupo/${code}`)).text()).not.toContain("/acesso/");
+  await org.page.getByRole("link", { name: "guarde seu link privado" }).click();
+  await expect(org.page).toHaveURL(new RegExp(`/grupo/${code}/eu$`));
   await org.page.getByRole("button", { name: "Copiar meu link privado" }).click();
   await expect(org.page.getByRole("button", { name: "Copiado! ✓" })).toBeVisible();
   const privateUrl = await org.page.evaluate(() => navigator.clipboard.readText());
@@ -132,7 +136,8 @@ test("link privado abre a conta em outro aparelho (com confirmação)", async ({
   await expect(other.page).toHaveURL(new RegExp(`/grupo/${code}$`));
   await expect(other.page.getByRole("link", { name: /Painel do organizador/ })).toBeVisible();
 
-  // sair deste aparelho
+  // sair deste aparelho (fica na Minha área)
+  await other.page.goto(`/grupo/${code}/eu`);
   await other.page.getByRole("button", { name: "Sair deste aparelho" }).click();
   await expect(other.page.getByRole("button", { name: "Entrar no grupo" })).toBeVisible();
 
@@ -222,7 +227,8 @@ test("recuperar acesso com nome + PIN em outro celular", async ({ browser }) => 
   await novo.page.getByLabel("Seu PIN").fill(PIN);
   await novo.page.getByRole("button", { name: "Recuperar meu acesso" }).click();
   await expect(novo.page.getByText(/Acesso recuperado!/)).toBeVisible();
-  await expect(novo.page.getByRole("heading", { name: "Olá, Maria Souza!" })).toBeVisible();
+  await expect(novo.page).toHaveURL(new RegExp(`/grupo/${code}/eu\\?recuperado=1$`));
+  await expect(novo.page.getByRole("heading", { name: "Minha área" })).toBeVisible();
 
   // o celular antigo perdeu o acesso
   await velho.page.reload();

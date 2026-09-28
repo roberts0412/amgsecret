@@ -21,7 +21,8 @@
     "postinstall": "prisma generate",
     "test:e2e": "APP_URL=http://localhost:3200 next build && playwright test",
     "test:e2e:standalone": "APP_URL=http://localhost:3200 next build && cp -r .next/static .next/standalone/.next/ && E2E_STANDALONE=1 playwright test",
-    "loadtest": "node scripts/loadtest.mjs"
+    "loadtest": "node scripts/loadtest.mjs",
+    "vercel-build": "prisma migrate deploy && next build"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

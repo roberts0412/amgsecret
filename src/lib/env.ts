@@ -12,7 +12,7 @@ const schema = z.object({
   APP_SECRET: z
     .string({ error: "não definido — gere com: node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"" })
     .min(43, "APP_SECRET precisa de pelo menos 32 bytes aleatórios (43 caracteres base64url)"),
-  APP_URL: z.url().default("http://localhost:3000"),
+  APP_URL: z.url(),
   /**
    * "true" só quando o app roda atrás de um proxy confiável (Vercel, Nginx...)
    * que define X-Forwarded-For/X-Real-IP. Sem proxy, esses cabeçalhos são
@@ -45,9 +45,20 @@ export type Env = z.infer<typeof schema>;
 
 let cached: Env | undefined;
 
+/**
+ * URL pública: APP_URL; se não definida, a URL de produção que a Vercel
+ * informa (VERCEL_PROJECT_PRODUCTION_URL, ex.: "amgsecret.vercel.app");
+ * por fim, localhost para desenvolvimento.
+ */
+export function resolveAppUrl(env: NodeJS.ProcessEnv = process.env): string {
+  if (env.APP_URL) return env.APP_URL;
+  if (env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return "http://localhost:3000";
+}
+
 export function getEnv(): Env {
   if (cached) return cached;
-  const parsed = schema.safeParse(process.env);
+  const parsed = schema.safeParse({ ...process.env, APP_URL: resolveAppUrl() });
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
     throw new Error(`Configuração inválida: ${issues}`);

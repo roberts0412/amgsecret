@@ -5,8 +5,12 @@ import type { NextConfig } from "next";
  * momento do build. Se o build de produção usar localhost, o sitemap e as URLs
  * canônicas sairão erradas — avisamos alto aqui.
  */
+// mesma regra de src/lib/env.ts (resolveAppUrl): APP_URL ou a URL da Vercel
+const appUrl =
+  process.env.APP_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
+
 if (process.argv.includes("build") && process.env.NODE_ENV !== "test") {
-  const appUrl = process.env.APP_URL ?? "";
   if (!appUrl || /localhost|127\.0\.0\.1/.test(appUrl)) {
     console.warn(
       `\n⚠️  APP_URL=${appUrl || "(vazio)"} — em produção, defina APP_URL com o domínio real ANTES do build ` +
@@ -18,7 +22,7 @@ if (process.argv.includes("build") && process.env.NODE_ENV !== "test") {
 // Cabeçalhos de segurança básicos. A CSP completa (com nonce) entra na etapa de
 // revisão de segurança, quando existirem os scripts de anúncios/analytics.
 const isDev = process.env.NODE_ENV === "development";
-const isHttps = (process.env.APP_URL ?? "").startsWith("https://");
+const isHttps = appUrl.startsWith("https://");
 
 /*
  * Content-Security-Policy SEM nonce (recomendação do Next para manter páginas

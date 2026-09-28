@@ -13,8 +13,8 @@ com controle de acesso rígido.
 |---|---|---|
 | Linguagem | TypeScript (strict) | Tipos no domínio crítico (sorteio, autorização) |
 | Web | Next.js (App Router) | SSR para SEO e para *nunca* mandar dados secretos a JS público; Server Actions com checagem de origem (CSRF) |
-| Banco | PostgreSQL (produção) / SQLite (dev e testes) | Transações ACID para salvar o sorteio de forma atômica |
-| ORM | Prisma | Consultas parametrizadas (sem SQL injection), migrações versionadas |
+| Banco | PostgreSQL em dev, testes e produção | Transações ACID para salvar o sorteio de forma atômica; mesmas migrações em todo lugar (sem divergência SQLite↔Postgres) |
+| ORM | Prisma 7 (driver adapter `pg`) | Consultas parametrizadas (sem SQL injection), migrações versionadas |
 | Validação | Zod | Validação de toda entrada no servidor |
 | Estilo | Tailwind CSS | Mobile-first, CSS pequeno, sem framework pesado |
 | Testes | Vitest (+ Playwright para E2E) | Rápido; Chromium já disponível |
@@ -40,47 +40,49 @@ cliente.
 
 ## 4. Modelo de dados
 
+Fonte da verdade: `prisma/schema.prisma` + `prisma/migrations/`.
+
 ```
 Group
-  id (cuid) · code (6 chars, único, público) · name · description
-  eventDate · eventTime · location · giftValueCents
-  creatorParticipantId · status (OPEN | DRAWN | ARCHIVED)
-  plan (FREE | PREMIUM) · theme · createdAt · updatedAt
+  id · code (único, público) · name · description · eventDate "YYYY-MM-DD"
+  eventTime "HH:MM" · location · giftValueCents · status (OPEN | DRAWN | ARCHIVED)
+  plan (FREE | PREMIUM) · theme · creatorId → Participant · createdAt · updatedAt
 
 Participant
-  id · groupId · name · nickname? · email? · phone?
-  tokenHash (sha256 do token privado, único) · isOrganizer
-  status (INVITED | CONFIRMED | REMOVED) · createdAt
-  @@unique(groupId, name)  -- evita nomes duplicados no grupo
+  id · groupId · name · nameKey (nome normalizado) · nickname? · email? · phone?
+  role (ORGANIZER | MEMBER) · status (INVITED | CONFIRMED | REMOVED)
+  tokenHash (sha256, único) · tokenIssuedAt · lastSeenAt · confirmedAt · removedAt
+  @@unique(groupId, nameKey)   -- "José" e "jose " são a mesma pessoa
 
-Exclusion
-  id · groupId · participantId · excludedParticipantId
-  @@unique(participantId, excludedParticipantId)
-
-Draw
-  id · groupId · status (ACTIVE | INVALIDATED) · createdAt · invalidatedAt?
-  -- no máximo 1 ACTIVE por grupo (garantido na transação + índice parcial no Postgres)
-
-DrawPair
-  id · drawId · giverId
-  receiverEnc   -- ID do sorteado CIFRADO (AES-256-GCM, chave só no servidor)
-  receiverHmac  -- HMAC(drawId, receiverId) para buscar "quem me tirou" sem decifrar tudo
-  @@unique(drawId, giverId) · @@unique(drawId, receiverHmac)
-
-WishlistItem
-  id · participantId · product · description? · approxPriceCents? · url? · note? · createdAt
-
-SecretMessage
-  id · drawId · senderPairId · recipientId · body · createdAt
-  -- o remetente nunca é exposto ao destinatário; vinculado ao sorteio
-
-WallPost
-  id · groupId · authorId · body · createdAt   -- público no grupo, com autor
+Exclusion      participantId · excludedParticipantId (FKs compostas com groupId)
+Draw           groupId · status (ACTIVE | INVALIDATED) · invalidatedAt
+DrawPair       drawId · giverId · receiverEnc (AES-256-GCM) · receiverLookup (HMAC)
+WishlistItem   participantId · product · description · approxPriceCents · url · note
+SecretMessage  drawId · recipientId · senderLookup (HMAC — sem remetente em claro) · body
+WallPost       groupId · authorId (mesmo grupo) · body · hiddenAt (moderação)
 ```
 
-**Proteção do relacionamento participante→resultado:** o par nunca é gravado em
-claro. Um dump do banco sozinho não revela quem tirou quem. Não existe nenhuma
-consulta/rota que liste todos os pares — nem para o organizador.
+Decisões:
+- **Data do evento como texto** `YYYY-MM-DD`: é data de calendário; `DateTime`
+  mudaria de dia conforme o fuso.
+- **Valores em centavos** (inteiros): sem erro de arredondamento.
+- **Pares cifrados**: `receiverEnc` usa AES-256-GCM com AAD = (drawId, giverId),
+  então copiar o texto cifrado para outra linha não funciona. `receiverLookup`
+  (HMAC) responde "quem me tirou?" sem decifrar tudo. Chaves derivadas de
+  `APP_SECRET` via HKDF, uma por finalidade.
+- **Mensagem secreta sem remetente em claro**: se gravássemos `senderId` e
+  `recipientId`, a tabela de mensagens revelaria os pares. O remetente é só
+  um HMAC.
+
+Garantias **no banco** (defesa em profundidade, testadas em `schema.db.test.ts`):
+- índice único parcial: no máximo 1 sorteio `ACTIVE` por grupo;
+- 1 par por doador e 1 por sorteado em cada sorteio;
+- exclusões e posts do mural só com participantes do mesmo grupo (FK composta);
+- ninguém "excluído" de si mesmo; valores ≥ 0; formato de data/hora;
+  textos obrigatórios não podem ser só espaços/quebras;
+- cascata: apagar grupo/sorteio apaga pares e mensagens.
+
+**Nenhuma consulta/rota lista todos os pares** — nem para o organizador.
 
 ## 5. Rotas
 
@@ -169,8 +171,8 @@ só o dono e quem o tirou (checado no servidor via `DrawPair`).
 | # | Etapa | Status |
 |---|---|---|
 | 1 | Núcleo: algoritmo do sorteio + tokens, com testes | ✅ |
-| 2 | Next.js + Prisma: schema, migrações, cliente, criptografia dos pares | ⏳ |
-| 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | |
+| 2 | Next.js + Prisma: schema, migrações, cliente, criptografia dos pares | ✅ |
+| 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | ⏳ |
 | 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | |
 | 5 | Lista de desejos, mensagens secretas, mural | |
 | 6 | Design mobile-first + botão "Compartilhar no WhatsApp" | |

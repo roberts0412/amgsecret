@@ -4,3 +4,6 @@ node_modules/
 .env*.local
 *.db
 coverage/
+src/generated/
+next-env.d.ts
+*.tsbuildinfo

@@ -237,6 +237,22 @@ plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
 - **Mural**: não anônimo, só para participantes; autor apaga o próprio,
   organizador oculta qualquer um.
 
+## 9b. Acabamento (Etapa 6)
+
+- **Prévia no WhatsApp**: `opengraph-image` do site e de cada grupo (nome,
+  data, valor — só o que já está no convite). Presente desenhado com formas
+  (sem emoji: o gerador buscaria imagens na internet). `metadataBase` =
+  `APP_URL` para URLs absolutas. `/acesso/*` não gera prévia.
+- **Temas**: variáveis CSS por `[data-theme]` aplicadas no layout de
+  `/grupo/<código>`. Clássico grátis; Natal, Neon e Minimalista premium
+  (bloqueados na tela e recusados no servidor).
+- **Mensagens prontas**: "cobrar quem não confirmou" (lista os nomes) e
+  "avisar que o sorteio foi feito" (sem revelar nada); botão de
+  compartilhamento nativo do celular.
+- **PWA**: manifest + ícones (adicionar à tela inicial).
+- **UX/a11y**: esqueleto de carregamento, página de erro amigável, foco
+  visível, áreas de toque ≥ 44 px, `prefers-reduced-motion`.
+
 ## 10. Etapas
 
 | # | Etapa | Status |
@@ -246,8 +262,8 @@ plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
 | 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | ✅ |
 | 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | ✅ |
 | 5 | Lista de desejos (opcional), mensagens secretas, mural + anúncios discretos | ✅ |
-| 6 | Design mobile-first + botão "Compartilhar no WhatsApp" | ⏳ |
-| 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | |
+| 6 | Acabamento: prévia do WhatsApp, temas, mensagens prontas, PWA, loading/erro, acessibilidade | ✅ |
+| 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | ⏳ |
 | 8 | Monetização (planos/ad slots) + revisão de segurança + E2E | |
 
 Cada etapa termina com: testes, typecheck, correções e relatório.

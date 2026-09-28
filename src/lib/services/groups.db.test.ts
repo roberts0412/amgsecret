@@ -4,7 +4,7 @@ import { AppError } from "@/lib/errors";
 import { hashToken } from "@/lib/security/tokens";
 import type { CreateGroupInput } from "@/lib/validation";
 import type { SessionParticipant } from "./common";
-import { createGroup, getOrganizerView, getPublicGroupView, removeParticipant, updateGroupDetails } from "./groups";
+import { createGroup, getOrganizerView, getPublicGroupView, removeParticipant, updateGroupDetails, updateTheme } from "./groups";
 import { authenticate, confirmParticipation, findByAccessToken, joinGroup } from "./participants";
 
 const db = testDb();
@@ -269,5 +269,21 @@ describe("removeParticipant", () => {
     await db.participant.update({ where: { id: s.id }, data: { role: "MEMBER" } });
     const fresh = await authenticate(db, code, token);
     await expectAppError(getOrganizerView(db, fresh), "FORBIDDEN");
+  });
+});
+
+describe("updateTheme", () => {
+  it("grátis: só o clássico; premium: todos; membro não troca", async () => {
+    const { code, token, organizer } = await setup();
+    const maria = await join(code, "Maria");
+    await expectAppError(updateTheme(db, organizer, "natal"), "FORBIDDEN");
+    await expectAppError(updateTheme(db, organizer, "hacker"), "NOT_FOUND");
+    await expectAppError(updateTheme(db, maria.session, "classico"), "FORBIDDEN");
+    await db.group.update({ where: { code }, data: { plan: "PREMIUM" } });
+    // sessão relida do banco já enxerga o plano novo
+    const premiumOrg = (await authenticate(db, code, token))!;
+    expect(premiumOrg.group.plan).toBe("PREMIUM");
+    await updateTheme(db, premiumOrg, "natal");
+    expect((await db.group.findUniqueOrThrow({ where: { code } })).theme).toBe("natal");
   });
 });

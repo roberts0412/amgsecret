@@ -10,8 +10,9 @@ export const btn = {
     "inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-800 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-60",
   whatsapp:
     "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366]",
+  // min-h-11 (44px): área de toque mínima recomendada no celular
   danger:
-    "inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60",
+    "inline-flex min-h-11 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60",
 };
 
 export function Card({

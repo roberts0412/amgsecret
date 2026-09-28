@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AdSlot } from "@/components/ad-slot";
 import { ConfirmParticipationForm, CopyButton, JoinGroupForm } from "@/components/forms";
+import { NativeShareButton } from "@/components/share-buttons";
 import { WallPostForm } from "@/components/social-forms";
 import { Wall } from "@/components/social-views";
 import { Alert, btn, Card, CardTitle, ExternalLink, PageShell, StatusBadge } from "@/components/ui";
@@ -25,7 +26,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: group.name,
     description: `Você foi convidado(a) para o amigo secreto "${group.name}". Entre e confirme sua participação.`,
     robots: { index: false, follow: false },
-    openGraph: { title: `🎁 Amigo secreto: ${group.name}`, description: "Entre pelo link e confirme sua participação." },
+    openGraph: {
+      title: `🎁 Amigo secreto: ${group.name}`,
+      description: "Entre pelo link e confirme sua participação.",
+      siteName: "Amigo Secreto",
+      locale: "pt_BR",
+      type: "website",
+    },
   };
 }
 
@@ -153,6 +160,7 @@ export default async function GroupPage({ params, searchParams }: Props) {
               Compartilhar no WhatsApp
             </ExternalLink>
             <CopyButton text={publicUrl} label="Copiar link do grupo" />
+            <NativeShareButton title={`Amigo secreto: ${group.name}`} text={inviteMessage(group, publicUrl)} />
           </div>
         </Card>
       )}

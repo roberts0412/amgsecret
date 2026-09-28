@@ -27,3 +27,30 @@ export function inviteMessage(group: ShareableGroup, url: string): string {
 export function whatsappShareUrl(text: string): string {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
+
+/** Lembrete para quem ainda não confirmou (o organizador manda no grupo). */
+export function reminderMessage(groupName: string, pendingNames: string[], url: string): string {
+  const who =
+    pendingNames.length === 0
+      ? ""
+      : pendingNames.length <= 8
+        ? pendingNames.join(", ")
+        : `${pendingNames.slice(0, 8).join(", ")} e mais ${pendingNames.length - 8}`;
+  return [
+    `⏰ Lembrete do amigo secreto *${groupName}*!`,
+    who ? `Ainda falta confirmar: ${who}.` : "Ainda tem gente sem confirmar.",
+    "",
+    "Confirme pelo link para entrar no sorteio:",
+    url,
+  ].join("\n");
+}
+
+/** Aviso de que o sorteio foi feito — sem revelar nada. */
+export function drawDoneMessage(groupName: string, url: string): string {
+  return [
+    `🎉 O sorteio do amigo secreto *${groupName}* foi feito!`,
+    "",
+    "Abra o link, entre na sua área e toque em \"Revelar\" para ver quem você tirou. 🤫",
+    url,
+  ].join("\n");
+}

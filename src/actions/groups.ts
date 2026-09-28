@@ -7,7 +7,7 @@ import { enforceRateLimit } from "@/lib/auth/rate-limit";
 import { clearSessionCookie, getSession, setSessionCookie } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { AppError } from "@/lib/errors";
-import { createGroup, removeParticipant, updateGroupDetails } from "@/lib/services/groups";
+import { createGroup, removeParticipant, updateGroupDetails, updateTheme } from "@/lib/services/groups";
 import { confirmParticipation, findByAccessToken, joinGroup, recoverAccess, setPin } from "@/lib/services/participants";
 import { normalizeGroupCode } from "@/lib/security/tokens";
 import {
@@ -95,6 +95,16 @@ export async function removeParticipantAction(_prev: ActionState, form: FormData
     await removeParticipant(getDb(), await getSession(code), participantId);
     revalidatePath(`/grupo/${code}`, "layout");
     return { ok: true, message: "Participante removido." };
+  });
+}
+
+export async function updateThemeAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const code = codeFrom(form);
+    await enforceRateLimit("organizerAction");
+    await updateTheme(getDb(), await getSession(code), String(form.get("theme") ?? "").slice(0, 30));
+    revalidatePath(`/grupo/${code}`, "layout");
+    return { ok: true, message: "Tema aplicado!" };
   });
 }
 

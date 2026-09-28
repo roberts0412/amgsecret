@@ -9,12 +9,17 @@ import {
   RunDrawButton,
 } from "@/components/draw-forms";
 import { EditGroupForm, RemoveParticipantButton } from "@/components/forms";
-import { Card, CardTitle, PageShell, StatusBadge } from "@/components/ui";
+import { ThemePicker } from "@/components/share-buttons";
+import { btn, Card, CardTitle, ExternalLink, PageShell, StatusBadge } from "@/components/ui";
 import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { MIN_PARTICIPANTS } from "@/lib/draw/draw";
 import { formatDateTime } from "@/lib/format";
+import { getEnv } from "@/lib/env";
+import { PLANS } from "@/lib/plans";
 import { getDrawReadiness, listExclusions } from "@/lib/services/draws";
+import { drawDoneMessage, groupUrl, reminderMessage, whatsappShareUrl } from "@/lib/share";
+import { effectiveTheme, THEMES } from "@/lib/themes";
 import { getOrganizerView, getPublicGroupView } from "@/lib/services/groups";
 
 type Props = { params: Promise<{ code: string }> };
@@ -45,6 +50,8 @@ export default async function AdminPage({ params }: Props) {
   const confirmed = view.participants.filter((p) => p.status === "CONFIRMED").length;
   const waiting = view.participants.length - confirmed;
   const isOpen = group.status === "OPEN";
+  const publicUrl = groupUrl(getEnv().APP_URL, code);
+  const pendingNames = view.participants.filter((p) => p.status === "INVITED").map((p) => p.name);
 
   return (
     <PageShell>
@@ -118,6 +125,21 @@ export default async function AdminPage({ params }: Props) {
         )}
       </Card>
 
+      {((isOpen && pendingNames.length > 0) || readiness.status === "DRAWN") && (
+        <Card>
+          <CardTitle>📣 Avisar o grupo</CardTitle>
+          {readiness.status === "DRAWN" ? (
+            <ExternalLink href={whatsappShareUrl(drawDoneMessage(group.name, publicUrl))} className={btn.whatsapp}>
+              Avisar que o sorteio foi feito
+            </ExternalLink>
+          ) : (
+            <ExternalLink href={whatsappShareUrl(reminderMessage(group.name, pendingNames, publicUrl))} className={btn.whatsapp}>
+              Cobrar quem não confirmou ({pendingNames.length})
+            </ExternalLink>
+          )}
+        </Card>
+      )}
+
       <Card>
         <CardTitle>Exclusões</CardTitle>
         <p className="mb-3 text-sm text-slate-600">Ex.: casais ou irmãos que não devem se tirar.</p>
@@ -142,6 +164,16 @@ export default async function AdminPage({ params }: Props) {
         ) : (
           <p className="text-sm text-slate-500">Para mudar exclusões, reabra o grupo.</p>
         )}
+      </Card>
+
+      <Card>
+        <CardTitle>🎨 Tema do grupo</CardTitle>
+        <ThemePicker
+          code={code}
+          themes={THEMES}
+          current={effectiveTheme(group.theme, group.plan)}
+          allowed={[...PLANS[group.plan].themes]}
+        />
       </Card>
 
       <Card>

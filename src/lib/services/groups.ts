@@ -2,6 +2,7 @@ import "server-only";
 import type { GroupStatus, ParticipantRole, ParticipantStatus, Plan } from "@/generated/prisma/enums";
 import { AppError } from "@/lib/errors";
 import { planFeatures } from "@/lib/plans";
+import { isThemeAllowed, THEMES } from "@/lib/themes";
 import { hashPin } from "@/lib/security/pin";
 import { generateGroupCode, generateToken, hashToken, normalizeGroupCode } from "@/lib/security/tokens";
 import { nameKey } from "@/lib/text";
@@ -81,6 +82,7 @@ export interface PublicGroupView {
   giftValueCents: number | null;
   status: GroupStatus;
   plan: Plan;
+  theme: string;
   participants: PublicParticipant[];
   confirmedCount: number;
 }
@@ -96,7 +98,7 @@ export async function getPublicGroupView(db: Db, rawCode: string): Promise<Publi
     where: { code },
     select: {
       code: true, name: true, description: true, eventDate: true, eventTime: true,
-      location: true, giftValueCents: true, status: true, plan: true,
+      location: true, giftValueCents: true, status: true, plan: true, theme: true,
       participants: {
         where: { status: { not: "REMOVED" } },
         orderBy: { createdAt: "asc" },
@@ -201,4 +203,14 @@ export async function removeParticipant(db: Db, session: SessionParticipant | nu
       },
     });
   });
+}
+
+/** Troca o tema do grupo. Temas premium só em grupos PREMIUM (checado aqui, não só na tela). */
+export async function updateTheme(db: Db, session: SessionParticipant | null, theme: string): Promise<void> {
+  const org = requireOrganizer(session);
+  if (!THEMES.some((t) => t.id === theme)) throw new AppError("NOT_FOUND", "Tema não encontrado.");
+  if (!isThemeAllowed(theme, org.group.plan)) {
+    throw new AppError("FORBIDDEN", "Este tema faz parte do plano Premium (em breve).");
+  }
+  await db.group.update({ where: { id: org.group.id }, data: { theme } });
 }

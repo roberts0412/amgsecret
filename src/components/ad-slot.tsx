@@ -11,7 +11,7 @@ export function AdSlot({ plan = "FREE" }: { plan?: Plan }) {
   if (mode.kind === "none") return null;
   return (
     <aside aria-label="Publicidade" className="mt-2 rounded-2xl bg-white/70 p-2 ring-1 ring-slate-900/5">
-      <p className="mb-1 text-center text-[10px] tracking-wide text-slate-400 uppercase">Publicidade</p>
+      <p className="mb-1 text-center text-[11px] tracking-wide text-slate-500 uppercase">Publicidade</p>
       <div className="h-[100px] overflow-hidden">
         {mode.kind === "adsense" ? (
           <AdSenseUnit client={mode.client} slot={mode.slot} />

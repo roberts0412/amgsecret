@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { getEnv } from "@/lib/env";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: { default: "Amigo Secreto Online Grátis", template: "%s · Amigo Secreto" },
-  description: "Crie seu amigo secreto online, grátis, com sorteio seguro, lista de desejos e convite pelo WhatsApp.",
-};
+/** metadataBase: URLs absolutas nas prévias (og:image precisa de URL completa). */
+export function generateMetadata(): Metadata {
+  return {
+    metadataBase: new URL(getEnv().APP_URL),
+    title: { default: "Amigo Secreto Online Grátis", template: "%s · Amigo Secreto" },
+    description: "Crie seu amigo secreto online, grátis, com sorteio seguro, lista de desejos e convite pelo WhatsApp.",
+    applicationName: "Amigo Secreto",
+    openGraph: { siteName: "Amigo Secreto", locale: "pt_BR", type: "website" },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

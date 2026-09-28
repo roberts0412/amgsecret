@@ -47,3 +47,21 @@ describe("formatDateTime", () => {
     expect(formatDateTime(new Date("2026-12-25T02:30:00Z"))).toBe("24/12/2026 às 23:30");
   });
 });
+
+describe("mensagens do organizador", () => {
+  it("lembrete lista quem falta (resumindo listas grandes)", async () => {
+    const { reminderMessage } = await import("./share");
+    expect(reminderMessage("Natal", ["Ana", "Bia"], "u")).toBe(
+      "⏰ Lembrete do amigo secreto *Natal*!\nAinda falta confirmar: Ana, Bia.\n\nConfirme pelo link para entrar no sorteio:\nu",
+    );
+    const many = Array.from({ length: 11 }, (_, i) => `P${i}`);
+    expect(reminderMessage("G", many, "u")).toContain("P7 e mais 3.");
+  });
+
+  it("aviso de sorteio não revela ninguém", async () => {
+    const { drawDoneMessage } = await import("./share");
+    const msg = drawDoneMessage("Natal", "https://x/grupo/ABC");
+    expect(msg).toContain("*Natal*");
+    expect(msg.endsWith("https://x/grupo/ABC")).toBe(true);
+  });
+});

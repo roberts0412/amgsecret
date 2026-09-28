@@ -12,6 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: url("/"), changeFrequency: "weekly", priority: 1 },
     { url: url("/criar"), changeFrequency: "monthly", priority: 0.9 },
+    { url: url("/privacidade"), changeFrequency: "yearly", priority: 0.3 },
+    { url: url("/termos"), changeFrequency: "yearly", priority: 0.3 },
     ...SEO_PAGES.map((p) => ({ url: url(`/${p.slug}`), changeFrequency: "monthly" as const, priority: 0.8 })),
   ];
 }

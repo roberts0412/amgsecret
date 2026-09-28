@@ -269,6 +269,30 @@ plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
 - **Build**: APP_URL (e AdSense) precisam existir no build — páginas estáticas
   gravam esses valores. O build avisa se APP_URL for localhost.
 
+## 9d. Produção e segurança final (Etapa 8)
+
+- **Independente**: `Dockerfile` (Next standalone, usuário sem privilégios,
+  healthcheck) + `docker-compose.yml` (PostgreSQL, migração, app, Caddy com
+  HTTPS automático). Guia: `docs/DEPLOY.md`. Testado de ponta a ponta aqui:
+  build da imagem, subida, HTTPS, fluxo completo e persistência após restart.
+- **Config**: `docker/check-env.mjs` impede o container de subir com
+  configuração inválida; `instrumentation.ts` valida no servidor Next.
+  Nenhum `.env` entra na imagem (o build falha se entrar — o Next copia o
+  `.env` para o standalone).
+- **CSP sem nonce** (mantém páginas estáticas): scripts só do site + Google
+  Ads; `object-src 'none'`, `base-uri`, `form-action`, `frame-ancestors`;
+  COOP; HSTS quando APP_URL é https. Testado sem violações no console.
+- **Proxy**: limite de 300 GETs/10 min por IP em `/grupo/*` e `/acesso/*`
+  (contra varredura de códigos).
+- **Dependências**: `npm audit` zerado (overrides de `mysql2`/`deepmerge-ts`,
+  que vinham da CLI do Prisma e nem vão para o servidor do site).
+- **LGPD**: aviso de cookies (só com AdSense; anúncios só após a escolha;
+  "só essenciais" = não personalizados), `/privacidade`, `/termos`, remoção
+  de participante apaga contatos/PIN/desejos, organizador exclui o grupo.
+- **404 real** para grupo inexistente (checado no layout, antes do streaming).
+- **Ambiente de desenvolvimento**: hook `.claude/hooks/session-start.sh`
+  liga o Postgres, cria bancos, `.env`, dependências e migrações.
+
 ## 10. Etapas
 
 | # | Etapa | Status |
@@ -280,6 +304,6 @@ plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
 | 5 | Lista de desejos (opcional), mensagens secretas, mural + anúncios discretos | ✅ |
 | 6 | Acabamento: prévia do WhatsApp, temas, mensagens prontas, PWA, loading/erro, acessibilidade | ✅ |
 | 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | ✅ |
-| 8 | Revisão de segurança final (CSP, headers, auditoria) + consentimento de cookies | ⏳ |
+| 8 | Independência (Docker Compose + HTTPS), segurança final (CSP, auditoria), LGPD (cookies, privacidade, termos, exclusão) | ✅ |
 
 Cada etapa termina com: testes, typecheck, correções e relatório.

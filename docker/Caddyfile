@@ -1,0 +1,8 @@
+# HTTPS automático (Let's Encrypt) para o domínio em $DOMAIN.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000 {
+		# IP real do visitante para o rate limit (o app usa X-Real-IP com TRUST_PROXY=true)
+		header_up X-Real-IP {remote_host}
+	}
+}

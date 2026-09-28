@@ -4,7 +4,7 @@ import { AppError } from "@/lib/errors";
 import { hashToken } from "@/lib/security/tokens";
 import type { CreateGroupInput } from "@/lib/validation";
 import type { SessionParticipant } from "./common";
-import { createGroup, getOrganizerView, getPublicGroupView, removeParticipant, updateGroupDetails, updateTheme } from "./groups";
+import { createGroup, deleteGroup, getOrganizerView, getPublicGroupView, removeParticipant, updateGroupDetails, updateTheme } from "./groups";
 import { authenticate, confirmParticipation, findByAccessToken, joinGroup } from "./participants";
 
 const db = testDb();
@@ -285,5 +285,31 @@ describe("updateTheme", () => {
     expect(premiumOrg.group.plan).toBe("PREMIUM");
     await updateTheme(db, premiumOrg, "natal");
     expect((await db.group.findUniqueOrThrow({ where: { code } })).theme).toBe("natal");
+  });
+});
+
+describe("LGPD: remoção e exclusão", () => {
+  it("remover participante apaga contatos, apelido, PIN e lista de desejos", async () => {
+    const { code, organizer } = await setup();
+    const maria = await join(code, "Maria", { email: "maria@x.com", phone: "11987654321", nickname: "Mari" });
+    await db.wishlistItem.create({ data: { participantId: maria.session.id, product: "Fone" } });
+    await removeParticipant(db, organizer, maria.session.id);
+    const row = await db.participant.findUniqueOrThrow({ where: { id: maria.session.id } });
+    expect(row).toMatchObject({ status: "REMOVED", email: null, phone: null, nickname: null, pinHash: null });
+    expect(await db.wishlistItem.count({ where: { participantId: maria.session.id } })).toBe(0);
+  });
+
+  it("excluir grupo: só o organizador, com o código certo; apaga tudo", async () => {
+    const { code, organizer } = await setup();
+    const maria = await join(code, "Maria");
+    const other = await setup();
+    await expectAppError(deleteGroup(db, maria.session, code), "FORBIDDEN");
+    await expectAppError(deleteGroup(db, organizer, "ERRADO"), "VALIDATION");
+    await deleteGroup(db, organizer, code.toLowerCase());
+    expect(await db.group.findUnique({ where: { code } })).toBeNull();
+    expect(await db.participant.count({ where: { group: { code } } })).toBe(0);
+    expect(await authenticate(db, code, maria.token)).toBeNull();
+    // outro grupo intacto
+    expect(await db.group.findUnique({ where: { code: other.code } })).not.toBeNull();
   });
 });

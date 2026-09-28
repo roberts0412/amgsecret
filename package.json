@@ -19,7 +19,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "postinstall": "prisma generate",
-    "test:e2e": "APP_URL=http://localhost:3200 next build && playwright test"
+    "test:e2e": "APP_URL=http://localhost:3200 next build && playwright test",
+    "test:e2e:standalone": "APP_URL=http://localhost:3200 next build && cp -r .next/static .next/standalone/.next/ && E2E_STANDALONE=1 playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -42,5 +43,9 @@
     "react-dom": "^19.3.0",
     "server-only": "^0.0.1",
     "zod": "^4.6.5"
+  },
+  "overrides": {
+    "mysql2": "^3.24.4",
+    "deepmerge-ts": "^8.0.2"
   }
 }

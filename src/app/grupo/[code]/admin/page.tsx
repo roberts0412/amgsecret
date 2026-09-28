@@ -9,7 +9,7 @@ import {
   RunDrawButton,
 } from "@/components/draw-forms";
 import { EditGroupForm, RemoveParticipantButton } from "@/components/forms";
-import { ThemePicker } from "@/components/share-buttons";
+import { DeleteGroupForm, ThemePicker } from "@/components/share-buttons";
 import { btn, Card, CardTitle, ExternalLink, PageShell, StatusBadge } from "@/components/ui";
 import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
@@ -190,6 +190,14 @@ export default async function AdminPage({ params }: Props) {
           }}
         />
       </Card>
+      <details className="rounded-2xl bg-white p-5 ring-1 ring-red-200">
+        <summary className="cursor-pointer font-semibold text-red-800">Excluir grupo</summary>
+        <p className="my-3 text-sm text-slate-600">
+          Apaga o grupo e todos os dados dele (participantes, sorteio, listas de desejos, mensagens e mural).
+          Não dá para desfazer.
+        </p>
+        <DeleteGroupForm code={code} />
+      </details>
     </PageShell>
   );
 }

@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { CookieConsent } from "@/components/cookie-consent";
+import { adMode } from "@/lib/ads";
 import { getEnv } from "@/lib/env";
 import "./globals.css";
 
@@ -22,7 +24,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh">
+        {children}
+        {/* aviso de cookies só existe quando há anúncios de verdade */}
+        {adMode().kind === "adsense" && <CookieConsent />}
+      </body>
     </html>
   );
 }

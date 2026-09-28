@@ -18,10 +18,11 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
     // usa o build de produção (rode `npm run build` antes)
-    command: `npx next start -p ${PORT}`,
+    // E2E_STANDALONE=1 testa o pacote autocontido (o mesmo do Docker)
+    command: process.env.E2E_STANDALONE ? "node .next/standalone/server.js" : `npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: false,
     timeout: 60_000,
-    env: { DATABASE_URL: E2E_DB, APP_URL: `http://localhost:${PORT}`, TRUST_PROXY: "true" },
+    env: { PORT: String(PORT), DATABASE_URL: E2E_DB, APP_URL: `http://localhost:${PORT}`, TRUST_PROXY: "true" },
   },
 });

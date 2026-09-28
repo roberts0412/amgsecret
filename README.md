@@ -35,11 +35,11 @@ npm run typecheck
 npm run build
 ```
 
-## Deploy
+## Publicar (independente)
 
-- Defina `DATABASE_URL`, `APP_SECRET`, `APP_URL` (domínio real, com https) e,
-  se usar anúncios, `ADSENSE_CLIENT_ID`/`ADSENSE_SLOT_ID` **antes do build**:
-  páginas de SEO, sitemap e robots são geradas no build com esses valores.
-- `TRUST_PROXY=true` quando estiver atrás de proxy confiável (Vercel, Nginx).
-- Rode `npm run db:deploy` a cada nova versão (aplica migrações).
-- Guarde `APP_SECRET` com cuidado: sem ele, os sorteios existentes ficam ilegíveis.
+Guia completo em **[docs/DEPLOY.md](docs/DEPLOY.md)**. Resumo, num servidor com Docker:
+
+```bash
+cp docker.env.example .env   # preencha domínio e segredos
+docker compose up -d --build # banco + migrações + site + HTTPS automático
+```

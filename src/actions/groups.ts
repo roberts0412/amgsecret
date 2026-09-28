@@ -7,7 +7,7 @@ import { enforceRateLimit } from "@/lib/auth/rate-limit";
 import { clearSessionCookie, getSession, setSessionCookie } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { AppError } from "@/lib/errors";
-import { createGroup, removeParticipant, updateGroupDetails, updateTheme } from "@/lib/services/groups";
+import { createGroup, deleteGroup, removeParticipant, updateGroupDetails, updateTheme } from "@/lib/services/groups";
 import { confirmParticipation, findByAccessToken, joinGroup, recoverAccess, setPin } from "@/lib/services/participants";
 import { normalizeGroupCode } from "@/lib/security/tokens";
 import {
@@ -106,6 +106,20 @@ export async function updateThemeAction(_prev: ActionState, form: FormData): Pro
     revalidatePath(`/grupo/${code}`, "layout");
     return { ok: true, message: "Tema aplicado!" };
   });
+}
+
+/** Exclusão definitiva do grupo (organizador, com confirmação pelo código). */
+export async function deleteGroupAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  let done = false;
+  const state = await runAction(async () => {
+    const code = codeFrom(form);
+    await enforceRateLimit("organizerAction");
+    await deleteGroup(getDb(), await getSession(code), String(form.get("confirmation") ?? ""));
+    await clearSessionCookie(code);
+    done = true;
+  });
+  if (done) redirect("/");
+  return state;
 }
 
 /** "Sair deste aparelho": apaga o cookie. O link privado continua valendo. */

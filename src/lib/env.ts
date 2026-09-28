@@ -8,9 +8,9 @@ import { z } from "zod";
  */
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, "DATABASE_URL deve ser uma URL PostgreSQL"),
+  DATABASE_URL: z.string({ error: "não definida (URL do PostgreSQL)" }).regex(/^postgres(ql)?:\/\//, "DATABASE_URL deve ser uma URL PostgreSQL"),
   APP_SECRET: z
-    .string()
+    .string({ error: "não definido — gere com: node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"" })
     .min(43, "APP_SECRET precisa de pelo menos 32 bytes aleatórios (43 caracteres base64url)"),
   APP_URL: z.url().default("http://localhost:3000"),
   /**
@@ -27,6 +27,8 @@ const schema = z.object({
     (v) => (v === "" ? undefined : v),
     z.string().regex(/^\d{5,20}$/, "ADSENSE_SLOT_ID deve ser numérico").optional(),
   ),
+  /** E-mail de contato exibido na Política de Privacidade (LGPD). */
+  CONTACT_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
   TRUST_PROXY: z
     .enum(["true", "false"])
     .default("false")

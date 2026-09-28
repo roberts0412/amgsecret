@@ -79,3 +79,9 @@ test("home tem imagem de prévia", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('meta[property="og:image"]')).toHaveCount(1);
 });
+
+test("grupo inexistente responde 404 de verdade (não 'soft 404')", async ({ page }) => {
+  for (const path of ["/grupo/ZZZZZZ", "/grupo/ZZZZZZ/eu", "/grupo/ZZZZZZ/admin", "/grupo/codigo-invalido"]) {
+    expect((await page.request.get(path)).status(), path).toBe(404);
+  }
+});

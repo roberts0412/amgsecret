@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { updateThemeAction } from "@/actions/groups";
+import { deleteGroupAction, updateThemeAction } from "@/actions/groups";
 import { initialActionState } from "@/lib/action-state";
 import type { ThemeInfo } from "@/lib/themes";
-import { FormMessage } from "./form-kit";
+import { Field, FormMessage, SubmitButton } from "./form-kit";
 import { btn } from "./ui";
 
 /**
@@ -76,6 +76,31 @@ export function ThemePicker({
       {allowed.length < themes.length && (
         <p className="text-xs text-slate-500">🔒 Temas extras fazem parte do plano Premium (em breve).</p>
       )}
+    </form>
+  );
+}
+
+/** Zona de perigo: exclusão definitiva do grupo. */
+export function DeleteGroupForm({ code }: { code: string }) {
+  const [state, action] = useActionState(deleteGroupAction, initialActionState);
+  return (
+    <form
+      action={action}
+      onSubmit={(e) => {
+        if (!window.confirm("Excluir o grupo e TODOS os dados (participantes, sorteio, desejos, mensagens)? Não dá para desfazer.")) {
+          e.preventDefault();
+        }
+      }}
+      className="flex flex-col gap-3"
+      noValidate
+    >
+      <input type="hidden" name="code" value={code} />
+      <FormMessage state={state} />
+      <Field name="confirmation" label={`Digite ${code} para confirmar`} state={state} autoComplete="off"
+        autoCapitalize="characters" spellCheck={false} maxLength={12} />
+      <SubmitButton variant="danger" pendingText="Excluindo…" className="w-full border border-red-300">
+        Excluir grupo definitivamente
+      </SubmitButton>
     </form>
   );
 }

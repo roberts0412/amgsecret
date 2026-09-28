@@ -193,6 +193,9 @@ export async function removeParticipant(db: Db, session: SessionParticipant | nu
     await tx.exclusion.deleteMany({
       where: { OR: [{ participantId: target.id }, { excludedParticipantId: target.id }] },
     });
+    // LGPD: apaga dados pessoais que não são mais necessários (a linha fica
+    // só para manter a integridade de posts antigos do mural)
+    await tx.wishlistItem.deleteMany({ where: { participantId: target.id } });
     await tx.participant.update({
       where: { id: target.id },
       data: {
@@ -200,6 +203,10 @@ export async function removeParticipant(db: Db, session: SessionParticipant | nu
         removedAt: new Date(),
         nameKey: `~removido~${target.id}`,
         tokenHash: hashToken(generateToken()), // token antigo deixa de valer
+        email: null,
+        phone: null,
+        nickname: null,
+        pinHash: null,
       },
     });
   });
@@ -213,4 +220,23 @@ export async function updateTheme(db: Db, session: SessionParticipant | null, th
     throw new AppError("FORBIDDEN", "Este tema faz parte do plano Premium (em breve).");
   }
   await db.group.update({ where: { id: org.group.id }, data: { theme } });
+}
+
+/**
+ * Exclui o grupo e TODOS os dados ligados a ele (participantes, sorteios,
+ * desejos, mensagens, mural) — definitivo. Exige digitar o código do grupo.
+ */
+export async function deleteGroup(db: Db, session: SessionParticipant | null, confirmation: string): Promise<void> {
+  const org = requireOrganizer(session);
+  if (confirmation.trim().toUpperCase() !== org.group.code) {
+    throw new AppError("VALIDATION", `Para confirmar, digite o código do grupo: ${org.group.code}`, {
+      confirmation: "Código diferente.",
+    });
+  }
+  await db.$transaction(async (tx) => {
+    await lockGroup(tx, org.group.id);
+    // o vínculo criador -> participante é desfeito antes (FK opcional)
+    await tx.group.update({ where: { id: org.group.id }, data: { creatorId: null } });
+    await tx.group.delete({ where: { id: org.group.id } });
+  });
 }

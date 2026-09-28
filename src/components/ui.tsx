@@ -57,8 +57,12 @@ export function PageShell({ children }: { children: ReactNode }) {
         </Link>
       </header>
       <main className="flex flex-1 flex-col gap-4 pb-10">{children}</main>
-      <footer className="py-6 text-center text-xs text-slate-500">
-        Cada participante vê somente o próprio amigo secreto.
+      <footer className="flex flex-col items-center gap-2 py-6 text-center text-xs text-slate-500">
+        <p>Cada participante vê somente o próprio amigo secreto.</p>
+        <nav aria-label="Informações" className="flex gap-4">
+          <Link href="/privacidade" className="underline">Privacidade</Link>
+          <Link href="/termos" className="underline">Termos de uso</Link>
+        </nav>
       </footer>
     </div>
   );

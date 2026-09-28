@@ -23,14 +23,23 @@ Em https://github.com/roberts0412/amgsecret → **Settings** → **General** →
    - Com **Connection pooling ligado** (o endereço tem `-pooler`): copie → será o **`DATABASE_URL`**.
    - Com **Connection pooling desligado**: copie → será o **`DIRECT_DATABASE_URL`**.
 
-   Ambos começam com `postgresql://` e terminam com `?sslmode=require`.
+   Ambos começam com `postgresql://`. Cole exatamente como o Neon mostra
+   (inclusive `?sslmode=require&channel_binding=require` — funciona; o site
+   exige TLS com verificação do certificado). Um aviso "SECURITY WARNING …
+   sslmode" nos logs é só informativo.
+
+   > 🔒 Esses endereços contêm a **senha do banco**. Cole-os apenas na Vercel —
+   > nunca em chats, prints ou no repositório. Se vazarem, use **Reset password**
+   > do usuário (role) no Neon e atualize as variáveis na Vercel.
 
 ## 2. Gere o segredo do site
 
-Abra https://generate-secret.vercel.app/32 e copie o texto — será o **`APP_SECRET`**.
+Abra https://generate-secret.vercel.app/64 e copie o texto (64 caracteres) —
+será o **`APP_SECRET`**. Precisa ter **pelo menos 43 caracteres**; textos mais
+curtos (ex.: o gerador `/32`) fazem o deploy falhar.
 
-> Guarde uma cópia em lugar seguro (gerenciador de senhas). Sem ele, os
-> sorteios existentes ficam ilegíveis.
+> Guarde uma cópia em lugar seguro (gerenciador de senhas) e não compartilhe.
+> Sem ele, os sorteios existentes ficam ilegíveis.
 
 ## 3. Site na Vercel
 

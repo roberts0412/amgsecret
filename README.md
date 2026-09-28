@@ -35,6 +35,10 @@ npm run typecheck
 npm run build
 ```
 
+## Publicar grátis (Vercel + Neon)
+
+Passo a passo em **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)** — sem servidor, em ~15 minutos.
+
 ## Publicar (independente)
 
 Guia completo em **[docs/DEPLOY.md](docs/DEPLOY.md)**. Resumo, num servidor com Docker:

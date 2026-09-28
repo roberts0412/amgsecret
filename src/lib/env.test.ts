@@ -25,3 +25,18 @@ describe("env", () => {
     expect(() => getEnv()).toThrow(/DATABASE_URL/);
   });
 });
+
+describe("resolveAppUrl", () => {
+  it("APP_URL > URL da Vercel > localhost", async () => {
+    const { resolveAppUrl } = await import("./env");
+    expect(resolveAppUrl({ APP_URL: "https://meu.com.br", VERCEL_PROJECT_PRODUCTION_URL: "x.vercel.app" } as never)).toBe("https://meu.com.br");
+    expect(resolveAppUrl({ VERCEL_PROJECT_PRODUCTION_URL: "amgsecret.vercel.app" } as never)).toBe("https://amgsecret.vercel.app");
+    expect(resolveAppUrl({} as never)).toBe("http://localhost:3000");
+  });
+
+  it("getEnv usa a URL da Vercel quando APP_URL não existe", () => {
+    delete process.env.APP_URL;
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "amgsecret.vercel.app";
+    expect(getEnv().APP_URL).toBe("https://amgsecret.vercel.app");
+  });
+});

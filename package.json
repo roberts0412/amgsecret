@@ -19,7 +19,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "postinstall": "prisma generate",
-    "test:e2e": "playwright test"
+    "test:e2e": "APP_URL=http://localhost:3200 next build && playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

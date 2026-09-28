@@ -30,7 +30,16 @@ npm run dev            # http://localhost:3000
 npm test          # unitários (sorteio, tokens, cifragem, texto)
 npm run test:db   # integração com Postgres real (TEST_DATABASE_URL, nome terminando em _test)
 npm run test:all  # tudo
-npm run build && npm run test:e2e  # navegador real (Playwright), banco E2E_DATABASE_URL (_e2e)
+npm run test:e2e  # build + navegador real (Playwright), banco E2E_DATABASE_URL (_e2e)
 npm run typecheck
 npm run build
 ```
+
+## Deploy
+
+- Defina `DATABASE_URL`, `APP_SECRET`, `APP_URL` (domínio real, com https) e,
+  se usar anúncios, `ADSENSE_CLIENT_ID`/`ADSENSE_SLOT_ID` **antes do build**:
+  páginas de SEO, sitemap e robots são geradas no build com esses valores.
+- `TRUST_PROXY=true` quando estiver atrás de proxy confiável (Vercel, Nginx).
+- Rode `npm run db:deploy` a cada nova versão (aplica migrações).
+- Guarde `APP_SECRET` com cuidado: sem ele, os sorteios existentes ficam ilegíveis.

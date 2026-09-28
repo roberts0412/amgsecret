@@ -253,6 +253,22 @@ plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
 - **UX/a11y**: esqueleto de carregamento, página de erro amigável, foco
   visível, áreas de toque ≥ 44 px, `prefers-reduced-motion`.
 
+## 9c. SEO (Etapa 7)
+
+- 5 páginas estáticas (`/[slug]`, `dynamicParams = false` → outros slugs 404):
+  amigo-secreto-online, sorteio-amigo-secreto, amigo-secreto-gratis,
+  sorteador-amigo-secreto, amigo-secreto-com-lista-de-desejos. Conteúdo em
+  `src/lib/seo-pages.ts` (título ≤ 60, descrição ≤ 160, FAQ real, sem
+  palavra-chave forçada), com canonical, Open Graph e imagem de prévia
+  própria, JSON-LD (FAQPage + BreadcrumbList; home: WebApplication) escapado
+  contra quebra de `<script>`, links internos entre os guias e para `/criar`.
+- `sitemap.xml`: home, /criar e os guias. Nunca grupos ou links privados.
+- `robots.txt`: bloqueia só `/acesso/`. `/grupo/` sai da busca por `noindex`
+  (meta + X-Robots-Tag) — bloquear no robots impediria o buscador de ler o
+  noindex e quebraria a prévia do convite em apps que respeitam robots.txt.
+- **Build**: APP_URL (e AdSense) precisam existir no build — páginas estáticas
+  gravam esses valores. O build avisa se APP_URL for localhost.
+
 ## 10. Etapas
 
 | # | Etapa | Status |
@@ -263,7 +279,7 @@ plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
 | 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | ✅ |
 | 5 | Lista de desejos (opcional), mensagens secretas, mural + anúncios discretos | ✅ |
 | 6 | Acabamento: prévia do WhatsApp, temas, mensagens prontas, PWA, loading/erro, acessibilidade | ✅ |
-| 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | ⏳ |
-| 8 | Monetização (planos/ad slots) + revisão de segurança + E2E | |
+| 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | ✅ |
+| 8 | Revisão de segurança final (CSP, headers, auditoria) + consentimento de cookies | ⏳ |
 
 Cada etapa termina com: testes, typecheck, correções e relatório.

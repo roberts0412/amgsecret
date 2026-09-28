@@ -13,8 +13,8 @@ com controle de acesso rígido.
 |---|---|---|
 | Linguagem | TypeScript (strict) | Tipos no domínio crítico (sorteio, autorização) |
 | Web | Next.js (App Router) | SSR para SEO e para *nunca* mandar dados secretos a JS público; Server Actions com checagem de origem (CSRF) |
-| Banco | PostgreSQL (produção) / SQLite (dev e testes) | Transações ACID para salvar o sorteio de forma atômica |
-| ORM | Prisma | Consultas parametrizadas (sem SQL injection), migrações versionadas |
+| Banco | PostgreSQL em dev, testes e produção | Transações ACID para salvar o sorteio de forma atômica; mesmas migrações em todo lugar (sem divergência SQLite↔Postgres) |
+| ORM | Prisma 7 (driver adapter `pg`) | Consultas parametrizadas (sem SQL injection), migrações versionadas |
 | Validação | Zod | Validação de toda entrada no servidor |
 | Estilo | Tailwind CSS | Mobile-first, CSS pequeno, sem framework pesado |
 | Testes | Vitest (+ Playwright para E2E) | Rápido; Chromium já disponível |
@@ -40,47 +40,49 @@ cliente.
 
 ## 4. Modelo de dados
 
+Fonte da verdade: `prisma/schema.prisma` + `prisma/migrations/`.
+
 ```
 Group
-  id (cuid) · code (6 chars, único, público) · name · description
-  eventDate · eventTime · location · giftValueCents
-  creatorParticipantId · status (OPEN | DRAWN | ARCHIVED)
-  plan (FREE | PREMIUM) · theme · createdAt · updatedAt
+  id · code (único, público) · name · description · eventDate "YYYY-MM-DD"
+  eventTime "HH:MM" · location · giftValueCents · status (OPEN | DRAWN | ARCHIVED)
+  plan (FREE | PREMIUM) · theme · creatorId → Participant · createdAt · updatedAt
 
 Participant
-  id · groupId · name · nickname? · email? · phone?
-  tokenHash (sha256 do token privado, único) · isOrganizer
-  status (INVITED | CONFIRMED | REMOVED) · createdAt
-  @@unique(groupId, name)  -- evita nomes duplicados no grupo
+  id · groupId · name · nameKey (nome normalizado) · nickname? · email? · phone?
+  role (ORGANIZER | MEMBER) · status (INVITED | CONFIRMED | REMOVED)
+  tokenHash (sha256, único) · tokenIssuedAt · lastSeenAt · confirmedAt · removedAt
+  @@unique(groupId, nameKey)   -- "José" e "jose " são a mesma pessoa
 
-Exclusion
-  id · groupId · participantId · excludedParticipantId
-  @@unique(participantId, excludedParticipantId)
-
-Draw
-  id · groupId · status (ACTIVE | INVALIDATED) · createdAt · invalidatedAt?
-  -- no máximo 1 ACTIVE por grupo (garantido na transação + índice parcial no Postgres)
-
-DrawPair
-  id · drawId · giverId
-  receiverEnc   -- ID do sorteado CIFRADO (AES-256-GCM, chave só no servidor)
-  receiverHmac  -- HMAC(drawId, receiverId) para buscar "quem me tirou" sem decifrar tudo
-  @@unique(drawId, giverId) · @@unique(drawId, receiverHmac)
-
-WishlistItem
-  id · participantId · product · description? · approxPriceCents? · url? · note? · createdAt
-
-SecretMessage
-  id · drawId · senderPairId · recipientId · body · createdAt
-  -- o remetente nunca é exposto ao destinatário; vinculado ao sorteio
-
-WallPost
-  id · groupId · authorId · body · createdAt   -- público no grupo, com autor
+Exclusion      participantId · excludedParticipantId (FKs compostas com groupId)
+Draw           groupId · status (ACTIVE | INVALIDATED) · invalidatedAt
+DrawPair       drawId · giverId · receiverEnc (AES-256-GCM) · receiverLookup (HMAC)
+WishlistItem   participantId · product · description · approxPriceCents · url · note
+SecretMessage  drawId · recipientId · senderLookup (HMAC — sem remetente em claro) · body
+WallPost       groupId · authorId (mesmo grupo) · body · hiddenAt (moderação)
 ```
 
-**Proteção do relacionamento participante→resultado:** o par nunca é gravado em
-claro. Um dump do banco sozinho não revela quem tirou quem. Não existe nenhuma
-consulta/rota que liste todos os pares — nem para o organizador.
+Decisões:
+- **Data do evento como texto** `YYYY-MM-DD`: é data de calendário; `DateTime`
+  mudaria de dia conforme o fuso.
+- **Valores em centavos** (inteiros): sem erro de arredondamento.
+- **Pares cifrados**: `receiverEnc` usa AES-256-GCM com AAD = (drawId, giverId),
+  então copiar o texto cifrado para outra linha não funciona. `receiverLookup`
+  (HMAC) responde "quem me tirou?" sem decifrar tudo. Chaves derivadas de
+  `APP_SECRET` via HKDF, uma por finalidade.
+- **Mensagem secreta sem remetente em claro**: se gravássemos `senderId` e
+  `recipientId`, a tabela de mensagens revelaria os pares. O remetente é só
+  um HMAC.
+
+Garantias **no banco** (defesa em profundidade, testadas em `schema.db.test.ts`):
+- índice único parcial: no máximo 1 sorteio `ACTIVE` por grupo;
+- 1 par por doador e 1 por sorteado em cada sorteio;
+- exclusões e posts do mural só com participantes do mesmo grupo (FK composta);
+- ninguém "excluído" de si mesmo; valores ≥ 0; formato de data/hora;
+  textos obrigatórios não podem ser só espaços/quebras;
+- cascata: apagar grupo/sorteio apaga pares e mensagens.
+
+**Nenhuma consulta/rota lista todos os pares** — nem para o organizador.
 
 ## 5. Rotas
 
@@ -102,26 +104,60 @@ removeExclusion, runDraw, redoDraw, addWish, sendSecretMessage, postToWall...).
 **Não existe** rota do tipo `/resultado?id=5`: o resultado é derivado apenas da
 sessão do participante.
 
-## 6. Autenticação e autorização
+## 6. Autenticação e autorização (implementado na Etapa 3)
 
 Sem cadastro/senha (atrito zero no WhatsApp):
 
-1. **Criar grupo** → servidor cria o Group + Participant organizador, gera token
-   aleatório de 256 bits, grava só o `sha256` e envia o token num cookie
-   `httpOnly; Secure; SameSite=Lax; Path=/grupo/<code>` + mostra um **link
-   privado de recuperação** (`/acesso/<token>`) para abrir em outro aparelho.
-2. **Entrar** (`/grupo/ABC123`) → informa nome → mesmo fluxo, cria participante
-   `INVITED`; ao confirmar vira `CONFIRMED`.
-3. Toda requisição: cookie → `sha256` → busca participante → confere
-   `groupId` e `status != REMOVED`. Organizador = `isOrganizer`.
-4. **Resultado**: `DrawPair` do sorteio ACTIVE onde `giverId = eu`. Refazer o
-   sorteio marca o anterior como `INVALIDATED` (e apaga seus pares); resultados
-   e mensagens antigas deixam de ser acessíveis.
-5. Sessão expira (cookie com validade) e o organizador pode regenerar o link
-   de um participante.
+1. **Criar grupo** → cria Group + organizador (`CONFIRMED`) numa transação, gera
+   token de 256 bits, grava só o `sha256` e guarda o token num cookie
+   `httpOnly; SameSite=Lax; Path=/` (em produção: `Secure` + prefixo `__Host-`),
+   um cookie por grupo (`__Host-as_<CÓDIGO>`), validade de ~6 meses.
+2. **Entrar** (`/grupo/ABC123`) → nome (+ apelido/e-mail/celular opcionais) →
+   participante `INVITED` → botão "Confirmar" → `CONFIRMED`.
+3. **Toda requisição**: cookie → `sha256` → participante; confere o código do
+   grupo e `status != REMOVED`. Papel e status são relidos do banco sempre.
+4. **Link privado** `/acesso/<token>`: o GET só mostra "Entrar como Fulano?";
+   o login é um POST (botão). Pré-visualizações do WhatsApp e links maliciosos
+   não logam ninguém. Resposta com `Referrer-Policy: no-referrer` e `noindex`.
+5. **Sair deste aparelho** apaga o cookie (o link privado continua valendo).
+6. **Remoção** pelo organizador (só antes do sorteio): troca o hash do token
+   (sessão cai na hora), libera o nome e apaga exclusões ligadas à pessoa.
+7. Trava de linha (`SELECT … FOR UPDATE`) no grupo em toda mudança estrutural:
+   entradas simultâneas nunca passam do limite do plano (testado com e sem a trava).
 
-**Visibilidade da lista de desejos**: antes do sorteio só o dono vê; depois,
-só o dono e quem o tirou (checado no servidor via `DrawPair`).
+**Server Actions** são endpoints públicos: identidade só do cookie, alvo (id)
+sempre conferido contra o grupo do usuário, retorno só com mensagem/erros de
+campo. CSRF: o Next compara `Origin` × `Host` (verificado em E2E com origem
+forjada) + cookies `SameSite=Lax`.
+
+**Rate limiting** (por IP, janela deslizante, em memória — trocar por Redis com
+várias instâncias): criar grupo 10/h, entrar 30/h, link privado 20/10min,
+busca de código 60/10min, ações 60–120/10min. `X-Forwarded-For` só é usado com
+`TRUST_PROXY=true`.
+
+### Recuperação de acesso: PIN (decisão: o mais seguro e grátis)
+
+Descartado: "organizador gera link novo" (ele poderia entrar como a pessoa e
+ver o resultado), e-mail/SMS (custo/serviço externo), passkeys (UX difícil).
+
+- Ao criar/entrar no grupo, cada pessoa cria um **PIN de 6 números**
+  (obrigatório). PINs óbvios são recusados (123456, 111111, 121212, 123123…).
+- Guardado como `scrypt(HMAC(pepper, PIN), sal)`. O *pepper* é derivado de
+  `APP_SECRET`: com só o banco, não dá para testar os 10^6 PINs offline.
+- Recuperar: `/grupo/<código>/recuperar` → nome + PIN → **gera token novo**
+  (o link do celular perdido para de funcionar).
+- Mesma mensagem ("Nome ou PIN incorretos.") para nome inexistente, sem PIN,
+  removido ou PIN errado; participante inexistente também passa pelo scrypt.
+- **Bloqueio por participante**: cada tentativa é reservada num UPDATE atômico
+  antes de conferir o PIN, e a 5ª tentativa já grava o bloqueio — nem ataques
+  em paralelo passam de 5 palpites por rodada (testado com 30 simultâneos).
+  Bloqueio progressivo: 15 min, 30 min, 1 h… até 24 h. Mais rate limit por IP.
+- O PIN nunca volta ao formulário após erro (não vai para HTML/payload).
+- Logado, a pessoa pode trocar o PIN. Esqueceu o PIN e perdeu o link: não há
+  recuperação — por desenho, nem o organizador consegue.
+- Trade-off aceito: alguém que erre o PIN de propósito pode bloquear
+  temporariamente a recuperação de outra pessoa (não afeta quem já está logado).
+- "Salvar no meu WhatsApp" ajuda a guardar o link privado.
 
 ## 7. Segurança
 
@@ -152,29 +188,136 @@ só o dono e quem o tirou (checado no servidor via `DrawPair`).
 - `validateAssignment` revalida de forma independente (ninguém tira a si
   mesmo, cada um tira 1, cada um é tirado 1 vez, exclusões respeitadas) antes
   de qualquer gravação.
-- Serviço de sorteio (Etapa 4) roda tudo dentro de **uma transação**:
-  checa status/organizador/confirmados → sorteia → valida → grava pares → marca
-  grupo `DRAWN`. Qualquer falha = rollback, nunca sorteio parcial.
+- Serviço de sorteio (`src/lib/services/draws.ts`, Etapa 4) roda tudo dentro
+  de **uma transação** com o grupo travado: confirma organizador e status →
+  carrega só os `CONFIRMED` e as exclusões entre eles → sorteia → revalida →
+  grava `Draw` + pares cifrados → confere a contagem gravada → marca `DRAWN`.
+  Qualquer falha = rollback (testado com gatilho que derruba o 3º par).
+- **Refazer**: invalida o sorteio ativo (apaga pares e mensagens dele) e sorteia
+  de novo na MESMA transação — se o novo falhar, o anterior continua valendo.
+  **Reabrir**: cancela o sorteio e volta o grupo para `OPEN`.
+- **Resultado**: `/grupo/<código>/eu` não carrega o nome; ele só vem por uma
+  Server Action autenticada quando a pessoa toca "Revelar" (não fica no HTML,
+  cache ou prévias). O organizador vê apenas quantos já revelaram.
 
-## 9. Monetização (preparação)
+## 9. Monetização
 
-- `Group.plan` + módulo `lib/plans` com limites/recursos por plano
-  (`maxParticipants`, `themes`, `adsEnabled`...).
-- Componente `<AdSlot/>` que não renderiza nada enquanto anúncios estiverem
-  desligados; nunca em páginas com dado secreto.
-- Sem pagamento por enquanto.
+**Anúncios discretos (implementado):** `src/components/ad-slot.tsx` + `src/lib/ads.ts`.
+- No máximo **1 espaço por página**, pequeno (100 px de altura fixa, sem
+  "pulo" de layout), no fim do conteúdo, marcado "Publicidade". Sem pop-up,
+  sem anúncio fixo na tela, sem intersticial.
+- Hoje em: início e página do grupo (inclusive as páginas de SEO, quando
+  existirem). **Nunca** em: minha área, amigo secreto, link privado,
+  recuperação, criar grupo, painel do organizador.
+- Script de anúncio é código de terceiros com acesso à página: por isso a
+  página do grupo não contém nenhum segredo (link privado/PIN/pares ficam
+  em `/eu`). Ele consegue ler nomes e o mural do grupo — trade-off aceito.
+- Google AdSense via `ADSENSE_CLIENT_ID` + `ADSENSE_SLOT_ID` (validados por
+  regex). Sem eles: nada em produção, marcador tracejado em desenvolvimento.
+  `/ads.txt` gerado automaticamente. A home é estática: as variáveis precisam
+  existir também no momento do build.
+- Grupos `PREMIUM` não exibem anúncios (`lib/plans.ts`).
+- Pendente para produção: banner de consentimento de cookies (LGPD / política
+  do Google para anúncios personalizados).
+
+**Preparado (sem pagamento ainda):** `Group.plan` (FREE/PREMIUM), limites por
+plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
+
+## 5b. Lista de desejos, mensagens e mural (Etapa 5)
+
+- **Lista de desejos (opcional)**: até 20 itens; produto, descrição, preço
+  aproximado, link (só http/https; `javascript:`/`data:` recusados) e
+  observação. Antes do sorteio só o dono vê; depois, só o dono e quem o tirou
+  (`getFriendWishes` não recebe id: deriva do sorteio da sessão).
+- **Mensagens secretas**: quem tirou manda anônimo; quem recebeu pode
+  responder sem descobrir quem é. A tabela guarda só o destinatário + HMAC do
+  remetente + direção; o destinatário vê só o **dia** (não o horário, que
+  poderia denunciar o remetente). Limite de 50 por pessoa por sorteio.
+  Refazer/reabrir o sorteio apaga as conversas.
+- **Mural**: não anônimo, só para participantes; autor apaga o próprio,
+  organizador oculta qualquer um.
+
+## 9b. Acabamento (Etapa 6)
+
+- **Prévia no WhatsApp**: `opengraph-image` do site e de cada grupo (nome,
+  data, valor — só o que já está no convite). Presente desenhado com formas
+  (sem emoji: o gerador buscaria imagens na internet). `metadataBase` =
+  `APP_URL` para URLs absolutas. `/acesso/*` não gera prévia.
+- **Temas**: variáveis CSS por `[data-theme]` aplicadas no layout de
+  `/grupo/<código>`. Clássico grátis; Natal, Neon e Minimalista premium
+  (bloqueados na tela e recusados no servidor).
+- **Mensagens prontas**: "cobrar quem não confirmou" (lista os nomes) e
+  "avisar que o sorteio foi feito" (sem revelar nada); botão de
+  compartilhamento nativo do celular.
+- **PWA**: manifest + ícones (adicionar à tela inicial).
+- **UX/a11y**: esqueleto de carregamento, página de erro amigável, foco
+  visível, áreas de toque ≥ 44 px, `prefers-reduced-motion`.
+
+## 9c. SEO (Etapa 7)
+
+- 5 páginas estáticas (`/[slug]`, `dynamicParams = false` → outros slugs 404):
+  amigo-secreto-online, sorteio-amigo-secreto, amigo-secreto-gratis,
+  sorteador-amigo-secreto, amigo-secreto-com-lista-de-desejos. Conteúdo em
+  `src/lib/seo-pages.ts` (título ≤ 60, descrição ≤ 160, FAQ real, sem
+  palavra-chave forçada), com canonical, Open Graph e imagem de prévia
+  própria, JSON-LD (FAQPage + BreadcrumbList; home: WebApplication) escapado
+  contra quebra de `<script>`, links internos entre os guias e para `/criar`.
+- `sitemap.xml`: home, /criar e os guias. Nunca grupos ou links privados.
+- `robots.txt`: bloqueia só `/acesso/`. `/grupo/` sai da busca por `noindex`
+  (meta + X-Robots-Tag) — bloquear no robots impediria o buscador de ler o
+  noindex e quebraria a prévia do convite em apps que respeitam robots.txt.
+- **Build**: APP_URL (e AdSense) precisam existir no build — páginas estáticas
+  gravam esses valores. O build avisa se APP_URL for localhost.
+
+## 9d. Produção e segurança final (Etapa 8)
+
+- **Independente**: `Dockerfile` (Next standalone, usuário sem privilégios,
+  healthcheck) + `docker-compose.yml` (PostgreSQL, migração, app, Caddy com
+  HTTPS automático). Guia: `docs/DEPLOY.md`. Testado de ponta a ponta aqui:
+  build da imagem, subida, HTTPS, fluxo completo e persistência após restart.
+- **Config**: `docker/check-env.mjs` impede o container de subir com
+  configuração inválida; `instrumentation.ts` valida no servidor Next.
+  Nenhum `.env` entra na imagem (o build falha se entrar — o Next copia o
+  `.env` para o standalone).
+- **CSP sem nonce** (mantém páginas estáticas): scripts só do site + Google
+  Ads; `object-src 'none'`, `base-uri`, `form-action`, `frame-ancestors`;
+  COOP; HSTS quando APP_URL é https. Testado sem violações no console.
+- **Proxy**: limite de 300 GETs/10 min por IP em `/grupo/*` e `/acesso/*`
+  (contra varredura de códigos).
+- **Dependências**: `npm audit` zerado (overrides de `mysql2`/`deepmerge-ts`,
+  que vinham da CLI do Prisma e nem vão para o servidor do site).
+- **LGPD**: aviso de cookies (só com AdSense; anúncios só após a escolha;
+  "só essenciais" = não personalizados), `/privacidade`, `/termos`, remoção
+  de participante apaga contatos/PIN/desejos, organizador exclui o grupo.
+- **404 real** para grupo inexistente (checado no layout, antes do streaming).
+- **Ambiente de desenvolvimento**: hook `.claude/hooks/session-start.sh`
+  liga o Postgres, cria bancos, `.env`, dependências e migrações.
+
+## 9e. Pós-etapas: acompanhamento e capacidade
+
+- **Quem já viu o resultado**: o painel mostra "já viu ✓ / ainda não viu" por
+  pessoa, barra de progresso, "🎉 Todo mundo já viu" e botão para cobrar pelo
+  WhatsApp quem falta — usa só `DrawPair.giverId` + `viewedAt`, nunca o
+  sorteado.
+- **Carga** (`scripts/loadtest.mjs`): pessoas virtuais reais (formulários,
+  PIN, travas, IP próprio). O primeiro teste achou 12% de erro em pico (pool
+  de 10 conexões e espera de 2 s) e 3 consultas repetidas por página.
+  Correções: pool configurável, `maxWait` 10 s, `React.cache` na visão do
+  grupo e `docker/server-cluster.mjs` (1 processo por núcleo, pool dividido,
+  reinício automático e desligamento gracioso). Resultado: 0 erros, 2,2× mais
+  vazão na página do grupo. Números em `docs/DEPLOY.md`.
 
 ## 10. Etapas
 
 | # | Etapa | Status |
 |---|---|---|
 | 1 | Núcleo: algoritmo do sorteio + tokens, com testes | ✅ |
-| 2 | Next.js + Prisma: schema, migrações, cliente, criptografia dos pares | ⏳ |
-| 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | |
-| 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | |
-| 5 | Lista de desejos, mensagens secretas, mural | |
-| 6 | Design mobile-first + botão "Compartilhar no WhatsApp" | |
-| 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | |
-| 8 | Monetização (planos/ad slots) + revisão de segurança + E2E | |
+| 2 | Next.js + Prisma: schema, migrações, cliente, criptografia dos pares | ✅ |
+| 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | ✅ |
+| 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | ✅ |
+| 5 | Lista de desejos (opcional), mensagens secretas, mural + anúncios discretos | ✅ |
+| 6 | Acabamento: prévia do WhatsApp, temas, mensagens prontas, PWA, loading/erro, acessibilidade | ✅ |
+| 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | ✅ |
+| 8 | Independência (Docker Compose + HTTPS), segurança final (CSP, auditoria), LGPD (cookies, privacidade, termos, exclusão) | ✅ |
 
 Cada etapa termina com: testes, typecheck, correções e relatório.

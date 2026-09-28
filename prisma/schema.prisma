@@ -1,0 +1,217 @@
+// Amigo Secreto — modelo de dados.
+// Ver docs/ARQUITETURA.md, seção "Modelo de dados".
+//
+// Regras de privacidade refletidas aqui:
+// - Tokens: só o hash SHA-256 é gravado (nunca o token em claro).
+// - DrawPair: o sorteado (receiver) é gravado CIFRADO; não há FK em claro
+//   giver -> receiver, então um dump do banco não revela os pares.
+// - SecretMessage: guarda o destinatário, mas o remetente só aparece como
+//   HMAC (senderLookup). Sem a chave do servidor não dá para ligar os dois.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GroupStatus {
+  OPEN // aceitando participantes / configurando
+  DRAWN // sorteio ativo; alterações estruturais bloqueadas
+  ARCHIVED
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum ParticipantStatus {
+  INVITED // entrou pelo link, ainda não confirmou
+  CONFIRMED
+  REMOVED
+}
+
+enum ParticipantRole {
+  ORGANIZER
+  MEMBER
+}
+
+/// Direção da mensagem secreta, do ponto de vista do DESTINATÁRIO.
+enum MessageDirection {
+  FROM_SANTA // de quem me tirou (anônimo para mim)
+  FROM_FRIEND // de quem eu tirei, respondendo (eu já sei quem é)
+}
+
+enum DrawStatus {
+  ACTIVE
+  INVALIDATED
+}
+
+model Group {
+  id             String      @id @default(cuid())
+  code           String      @unique @db.VarChar(12) // código público: /grupo/ABC123
+  name           String      @db.VarChar(80)
+  description    String?     @db.VarChar(500)
+  eventDate      String?     @db.VarChar(10) // "YYYY-MM-DD" (sem fuso — é uma data de calendário)
+  eventTime      String?     @db.VarChar(5) // "HH:MM"
+  location       String?     @db.VarChar(120)
+  giftValueCents Int? // valor sugerido do presente, em centavos
+  status         GroupStatus @default(OPEN)
+  plan           Plan        @default(FREE)
+  theme          String      @default("classico") @db.VarChar(30)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Criador (organizador original). Opcional só por causa da criação em duas
+  // etapas dentro da mesma transação (grupo -> participante -> vínculo).
+  creatorId String?      @unique
+  creator   Participant? @relation("GroupCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+
+  participants Participant[] @relation("GroupParticipants")
+  exclusions   Exclusion[]
+  draws        Draw[]
+  wallPosts    WallPost[]
+}
+
+model Participant {
+  id       String            @id @default(cuid())
+  groupId  String
+  group    Group             @relation("GroupParticipants", fields: [groupId], references: [id], onDelete: Cascade)
+  name     String            @db.VarChar(60)
+  // nome normalizado (minúsculas, sem acento, espaços colapsados) para
+  // impedir "Maria" e "maria " como pessoas diferentes no mesmo grupo
+  nameKey  String            @db.VarChar(60)
+  nickname String?           @db.VarChar(40)
+  email    String?           @db.VarChar(254)
+  phone    String?           @db.VarChar(20)
+  role     ParticipantRole   @default(MEMBER)
+  status   ParticipantStatus @default(INVITED)
+
+  tokenHash     String   @unique @db.Char(64) // sha256(token) em hex
+  tokenIssuedAt DateTime @default(now())
+
+  // Recuperação de acesso por PIN (ver src/lib/security/pin.ts).
+  // pinHash = scrypt(HMAC(chave do servidor, PIN), sal) — sem a chave do
+  // servidor, um dump do banco não permite testar os 10^6 PINs possíveis.
+  pinHash           String?   @db.VarChar(200)
+  pinFailedAttempts Int       @default(0)
+  pinLockedUntil    DateTime?
+  lastSeenAt        DateTime?
+  confirmedAt       DateTime?
+  removedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  createdGroup   Group?          @relation("GroupCreator")
+  exclusions     Exclusion[]     @relation("ExclusionOwner")
+  excludedBy     Exclusion[]     @relation("ExclusionTarget")
+  givingPairs    DrawPair[]
+  wishlist       WishlistItem[]
+  wallPosts      WallPost[]
+  receivedSecret SecretMessage[]
+
+  @@unique([groupId, nameKey])
+  @@unique([groupId, id]) // alvo das FKs compostas (mesmo grupo)
+  @@index([groupId, status])
+}
+
+/// "participantId não pode tirar excludedParticipantId"
+model Exclusion {
+  id                    String      @id @default(cuid())
+  groupId               String
+  group                 Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participantId         String
+  // FKs compostas (groupId, id): o banco garante que ambos são do mesmo grupo
+  participant           Participant @relation("ExclusionOwner", fields: [groupId, participantId], references: [groupId, id], onDelete: Cascade)
+  excludedParticipantId String
+  excludedParticipant   Participant @relation("ExclusionTarget", fields: [groupId, excludedParticipantId], references: [groupId, id], onDelete: Cascade)
+  createdAt             DateTime    @default(now())
+
+  @@unique([participantId, excludedParticipantId])
+  @@index([groupId])
+}
+
+model Draw {
+  id            String     @id @default(cuid())
+  groupId       String
+  group         Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  status        DrawStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  invalidatedAt DateTime?
+
+  pairs    DrawPair[]
+  messages SecretMessage[]
+  // + índice único parcial (migração SQL): no máximo 1 ACTIVE por grupo
+
+  @@index([groupId, status])
+}
+
+model DrawPair {
+  id      String      @id @default(cuid())
+  drawId  String
+  draw    Draw        @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  giverId String
+  giver   Participant @relation(fields: [giverId], references: [id], onDelete: Cascade)
+
+  /// ID do sorteado cifrado com AES-256-GCM (AAD = drawId + giverId)
+  receiverEnc    String @db.VarChar(255)
+  /// HMAC-SHA256(drawId, receiverId): acha "quem me tirou" sem decifrar tudo
+  receiverLookup String @db.Char(64)
+
+  /// Quando o doador revelou o próprio resultado (para o aviso ao refazer).
+  viewedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([drawId, giverId])
+  @@unique([drawId, receiverLookup])
+}
+
+model WishlistItem {
+  id               String      @id @default(cuid())
+  participantId    String
+  participant      Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  product          String      @db.VarChar(100)
+  description      String?     @db.VarChar(500)
+  approxPriceCents Int?
+  url              String?     @db.VarChar(2048)
+  note             String?     @db.VarChar(300)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([participantId])
+}
+
+/// Mensagem anônima do amigo secreto para quem ele tirou.
+model SecretMessage {
+  id           String           @id @default(cuid())
+  drawId       String
+  draw         Draw             @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  recipientId  String
+  recipient    Participant      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  /// HMAC-SHA256(drawId, senderId) — permite ao remetente ver o que enviou
+  /// e aplicar limites, sem gravar o remetente em claro.
+  senderLookup String           @db.Char(64)
+  direction    MessageDirection @default(FROM_SANTA)
+  body         String           @db.VarChar(1000)
+  createdAt    DateTime         @default(now())
+
+  @@index([drawId, recipientId])
+  @@index([drawId, senderLookup])
+}
+
+/// Mural público do grupo (não anônimo).
+model WallPost {
+  id        String      @id @default(cuid())
+  groupId   String
+  group     Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    Participant @relation(fields: [groupId, authorId], references: [groupId, id], onDelete: Cascade) // autor do mesmo grupo
+  body      String      @db.VarChar(1000)
+  hiddenAt  DateTime? // moderação pelo organizador
+  createdAt DateTime    @default(now())
+
+  @@index([groupId, createdAt])
+}

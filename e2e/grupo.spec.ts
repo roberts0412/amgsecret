@@ -1,4 +1,5 @@
-import { type Browser, type BrowserContext, expect, type Page, test } from "@playwright/test";
+import type { Browser, BrowserContext, Page } from "@playwright/test";
+import { expect, newPhoneContext, test } from "./fixtures";
 
 /**
  * Fluxo real no navegador, cada pessoa num "celular" (contexto) diferente:
@@ -6,7 +7,7 @@ import { type Browser, type BrowserContext, expect, type Page, test } from "@pla
  */
 
 async function newPhone(browser: Browser): Promise<{ ctx: BrowserContext; page: Page }> {
-  const ctx = await browser.newContext({ permissions: ["clipboard-read", "clipboard-write"] });
+  const ctx = await newPhoneContext(browser, { permissions: ["clipboard-read", "clipboard-write"] });
   return { ctx, page: await ctx.newPage() };
 }
 

@@ -40,3 +40,10 @@ describe("share", () => {
     expect(whatsappShareUrl("a & b\nc")).toBe("https://wa.me/?text=a%20%26%20b%0Ac");
   });
 });
+
+describe("formatDateTime", () => {
+  it("usa o fuso de São Paulo", async () => {
+    const { formatDateTime } = await import("./format");
+    expect(formatDateTime(new Date("2026-12-25T02:30:00Z"))).toBe("24/12/2026 às 23:30");
+  });
+});

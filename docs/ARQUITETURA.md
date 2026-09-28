@@ -188,9 +188,17 @@ ver o resultado), e-mail/SMS (custo/serviço externo), passkeys (UX difícil).
 - `validateAssignment` revalida de forma independente (ninguém tira a si
   mesmo, cada um tira 1, cada um é tirado 1 vez, exclusões respeitadas) antes
   de qualquer gravação.
-- Serviço de sorteio (Etapa 4) roda tudo dentro de **uma transação**:
-  checa status/organizador/confirmados → sorteia → valida → grava pares → marca
-  grupo `DRAWN`. Qualquer falha = rollback, nunca sorteio parcial.
+- Serviço de sorteio (`src/lib/services/draws.ts`, Etapa 4) roda tudo dentro
+  de **uma transação** com o grupo travado: confirma organizador e status →
+  carrega só os `CONFIRMED` e as exclusões entre eles → sorteia → revalida →
+  grava `Draw` + pares cifrados → confere a contagem gravada → marca `DRAWN`.
+  Qualquer falha = rollback (testado com gatilho que derruba o 3º par).
+- **Refazer**: invalida o sorteio ativo (apaga pares e mensagens dele) e sorteia
+  de novo na MESMA transação — se o novo falhar, o anterior continua valendo.
+  **Reabrir**: cancela o sorteio e volta o grupo para `OPEN`.
+- **Resultado**: `/grupo/<código>/eu` não carrega o nome; ele só vem por uma
+  Server Action autenticada quando a pessoa toca "Revelar" (não fica no HTML,
+  cache ou prévias). O organizador vê apenas quantos já revelaram.
 
 ## 9. Monetização (preparação)
 
@@ -207,8 +215,8 @@ ver o resultado), e-mail/SMS (custo/serviço externo), passkeys (UX difícil).
 | 1 | Núcleo: algoritmo do sorteio + tokens, com testes | ✅ |
 | 2 | Next.js + Prisma: schema, migrações, cliente, criptografia dos pares | ✅ |
 | 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | ✅ |
-| 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | ⏳ |
-| 5 | Lista de desejos, mensagens secretas, mural | |
+| 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | ✅ |
+| 5 | Lista de desejos, mensagens secretas, mural | ⏳ |
 | 6 | Design mobile-first + botão "Compartilhar no WhatsApp" | |
 | 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | |
 | 8 | Monetização (planos/ad slots) + revisão de segurança + E2E | |

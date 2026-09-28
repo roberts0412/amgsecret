@@ -155,7 +155,9 @@ model DrawPair {
   /// HMAC-SHA256(drawId, receiverId): acha "quem me tirou" sem decifrar tudo
   receiverLookup String @db.Char(64)
 
-  createdAt DateTime @default(now())
+  /// Quando o doador revelou o próprio resultado (para o aviso ao refazer).
+  viewedAt  DateTime?
+  createdAt DateTime  @default(now())
 
   @@unique([drawId, giverId])
   @@unique([drawId, receiverLookup])

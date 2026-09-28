@@ -22,6 +22,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: false,
     timeout: 60_000,
-    env: { DATABASE_URL: E2E_DB, APP_URL: `http://localhost:${PORT}`, TRUST_PROXY: "false" },
+    env: { DATABASE_URL: E2E_DB, APP_URL: `http://localhost:${PORT}`, TRUST_PROXY: "true" },
   },
 });

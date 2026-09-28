@@ -98,6 +98,14 @@ export default async function GroupPage({ params, searchParams }: Props) {
           {me.status === "CONFIRMED" && group.status === "OPEN" && (
             <p className="text-slate-700">Sua participação está confirmada ✓ Aguarde o sorteio.</p>
           )}
+          {me.status === "CONFIRMED" && group.status === "DRAWN" && (
+            <>
+              <p className="mb-3 text-slate-700">O sorteio foi feito! 🎉</p>
+              <Link href={`/grupo/${code}/eu`} className={btn.primary}>
+                🎁 Ver meu amigo secreto
+              </Link>
+            </>
+          )}
           {me.status === "INVITED" && group.status === "DRAWN" && (
             <p className="text-slate-700">O sorteio foi feito antes da sua confirmação. Fale com o organizador.</p>
           )}

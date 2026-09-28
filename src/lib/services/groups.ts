@@ -126,6 +126,11 @@ export interface OrganizerParticipant {
   nickname: string | null;
   status: Exclude<ParticipantStatus, "REMOVED">;
   role: ParticipantRole;
+  /**
+   * Já revelou o próprio resultado no sorteio ativo? null = não está no
+   * sorteio (ou não há sorteio). Diz SÓ se a pessoa viu — nunca quem ela tirou.
+   */
+  viewed: boolean | null;
 }
 
 export interface OrganizerView {
@@ -136,14 +141,25 @@ export interface OrganizerView {
 /** Painel do organizador: status de cada um. Nada sobre resultados/pares. */
 export async function getOrganizerView(db: Db, session: SessionParticipant | null): Promise<OrganizerView> {
   const org = requireOrganizer(session);
-  const participants = await db.participant.findMany({
-    where: { groupId: org.group.id, status: { not: "REMOVED" } },
-    orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, nickname: true, status: true, role: true },
-  });
+  const [participants, pairs] = await Promise.all([
+    db.participant.findMany({
+      where: { groupId: org.group.id, status: { not: "REMOVED" } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, nickname: true, status: true, role: true },
+    }),
+    // só giverId + viewedAt: o sorteado (receiver) nem é lido
+    db.drawPair.findMany({
+      where: { draw: { groupId: org.group.id, status: "ACTIVE" } },
+      select: { giverId: true, viewedAt: true },
+    }),
+  ]);
+  const viewedBy = new Map(pairs.map((p) => [p.giverId, p.viewedAt !== null]));
   return {
     maxParticipants: planFeatures(org.group.plan).maxParticipants,
-    participants: participants as OrganizerParticipant[],
+    participants: participants.map((p) => ({
+      ...(p as Omit<OrganizerParticipant, "viewed">),
+      viewed: viewedBy.get(p.id) ?? null,
+    })),
   };
 }
 

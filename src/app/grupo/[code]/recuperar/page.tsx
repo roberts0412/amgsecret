@@ -4,8 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { RecoverAccessForm } from "@/components/forms";
 import { Card, CardTitle, PageShell } from "@/components/ui";
 import { getSession } from "@/lib/auth/session";
-import { getDb } from "@/lib/db/client";
-import { getPublicGroupView } from "@/lib/services/groups";
+import { getGroupView } from "@/lib/queries";
 
 type Props = { params: Promise<{ code: string }> };
 
@@ -13,7 +12,7 @@ export const metadata: Metadata = { title: "Recuperar acesso", robots: { index: 
 
 export default async function RecoverPage({ params }: Props) {
   const { code: rawCode } = await params;
-  const group = await getPublicGroupView(getDb(), rawCode);
+  const group = await getGroupView(rawCode);
   if (!group) notFound();
   if (rawCode !== group.code) redirect(`/grupo/${group.code}/recuperar`);
   if (await getSession(group.code)) redirect(`/grupo/${group.code}`); // já está logado

@@ -293,6 +293,20 @@ plano (participantes, temas, anúncios) centralizados em `lib/plans.ts`.
 - **Ambiente de desenvolvimento**: hook `.claude/hooks/session-start.sh`
   liga o Postgres, cria bancos, `.env`, dependências e migrações.
 
+## 9e. Pós-etapas: acompanhamento e capacidade
+
+- **Quem já viu o resultado**: o painel mostra "já viu ✓ / ainda não viu" por
+  pessoa, barra de progresso, "🎉 Todo mundo já viu" e botão para cobrar pelo
+  WhatsApp quem falta — usa só `DrawPair.giverId` + `viewedAt`, nunca o
+  sorteado.
+- **Carga** (`scripts/loadtest.mjs`): pessoas virtuais reais (formulários,
+  PIN, travas, IP próprio). O primeiro teste achou 12% de erro em pico (pool
+  de 10 conexões e espera de 2 s) e 3 consultas repetidas por página.
+  Correções: pool configurável, `maxWait` 10 s, `React.cache` na visão do
+  grupo e `docker/server-cluster.mjs` (1 processo por núcleo, pool dividido,
+  reinício automático e desligamento gracioso). Resultado: 0 erros, 2,2× mais
+  vazão na página do grupo. Números em `docs/DEPLOY.md`.
+
 ## 10. Etapas
 
 | # | Etapa | Status |

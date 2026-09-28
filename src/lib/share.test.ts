@@ -65,3 +65,12 @@ describe("mensagens do organizador", () => {
     expect(msg.endsWith("https://x/grupo/ABC")).toBe(true);
   });
 });
+
+describe("lembrete de quem não viu", () => {
+  it("lista os nomes e não revela resultado", async () => {
+    const { notViewedReminderMessage } = await import("./share");
+    const msg = notViewedReminderMessage("Natal", ["Ana", "Bia"], "u");
+    expect(msg).toContain("Ainda não viram quem tiraram: Ana, Bia.");
+    expect(msg.endsWith("u")).toBe(true);
+  });
+});

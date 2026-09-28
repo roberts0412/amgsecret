@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDb } from "@/lib/db/client";
-import { normalizeGroupCode } from "@/lib/security/tokens";
+import { getGroupView } from "@/lib/queries";
 import { effectiveTheme } from "@/lib/themes";
 
 /**
@@ -16,11 +15,9 @@ export default async function GroupLayout({
   children: React.ReactNode;
   params: Promise<{ code: string }>;
 }) {
-  const code = normalizeGroupCode((await params).code);
-  const group = code
-    ? await getDb().group.findUnique({ where: { code }, select: { theme: true, plan: true, status: true } })
-    : null;
-  if (!group || group.status === "ARCHIVED") notFound();
+  // mesma consulta (memoizada) que a página e o generateMetadata usam
+  const group = await getGroupView((await params).code);
+  if (!group) notFound(); // inexistente ou arquivado
   return (
     <div data-theme={effectiveTheme(group.theme, group.plan)} className="min-h-dvh bg-page">
       {children}

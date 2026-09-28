@@ -150,6 +150,43 @@ com um PostgreSQL gerenciado (Neon, Supabase, Railway):
   limite também no provedor (WAF/CDN) ou troque o store por Redis
   (`src/lib/security/rate-limit.ts`, interface `RateLimitStore`).
 
+## Capacidade (muitos acessos ao mesmo tempo)
+
+Medido com `scripts/loadtest.mjs` num servidor de **4 núcleos** (equivalente a
+um VPS médio), com o gerador de carga rodando na mesma máquina. Cenário:
+30 grupos × 41 pessoas (1.230 pessoas), **200 acessos simultâneos**, cada
+pessoa virtual com IP próprio, passando por PIN, travas, cifragem e rate limit.
+
+| Pico | Vazão | p50 | p95 | Erros |
+|---|---|---|---|---|
+| Link aberto no WhatsApp (3.000 aberturas) | 232/s | 0,8 s | 1,1 s | 0 |
+| Entrar no grupo com PIN | 70/s (4.200/min) | 2,7 s | 4,3 s | 0 |
+| Confirmar presença | 96/s | 1,9 s | 3,0 s | 0 |
+| Sortear 30 grupos juntos | 35/s | 0,8 s | 0,9 s | 0 |
+| Todo mundo revelando junto | 155/s | 1,3 s | 1,6 s | 0 |
+
+Todos os 30 sorteios conferidos: cada pessoa tirada exatamente uma vez.
+
+O que garante isso:
+- **um processo do site por núcleo** (`APP_WORKERS`, padrão = nº de núcleos até 8);
+- **pool de conexões** dividido automaticamente entre os processos
+  (≈ 80 no total; o PostgreSQL aceita 100);
+- transações esperam até 10 s por conexão em vez de falhar no pico;
+- 1 consulta do grupo por página (cache por requisição).
+
+A entrada com PIN é a parte mais "cara" de propósito (protege o PIN contra
+adivinhação). Para mais capacidade, use um servidor com mais núcleos.
+
+Para medir no seu servidor (antes de abrir ao público — cria grupos de teste):
+
+```bash
+npm run loadtest -- --base https://seu-dominio --groups 20 --members 25 --concurrency 100
+```
+
+> Com `APP_WORKERS` > 1, o limite de tentativas em memória vale por processo
+> (na prática, fica multiplicado pelo nº de processos). O bloqueio do PIN
+> fica no banco e não é afetado.
+
 ## Limitações conhecidas
 
 - Rate limiting em memória: ideal para **um** servidor (caso do Compose).

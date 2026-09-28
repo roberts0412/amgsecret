@@ -11,7 +11,7 @@ import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
 import { formatCents, formatWhen } from "@/lib/format";
-import { getPublicGroupView } from "@/lib/services/groups";
+import { getGroupView } from "@/lib/queries";
 import { hasPin } from "@/lib/services/participants";
 import { listWall } from "@/lib/services/social";
 import { groupUrl, inviteMessage, whatsappShareUrl } from "@/lib/share";
@@ -20,7 +20,7 @@ type Props = { params: Promise<{ code: string }>; searchParams: Promise<Record<s
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
-  const group = await getPublicGroupView(getDb(), code);
+  const group = await getGroupView(code);
   if (!group) return { title: "Grupo não encontrado", robots: { index: false } };
   return {
     title: group.name,
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  */
 export default async function GroupPage({ params, searchParams }: Props) {
   const { code: rawCode } = await params;
-  const group = await getPublicGroupView(getDb(), rawCode);
+  const group = await getGroupView(rawCode);
   if (!group) notFound();
   const { code } = group;
   if (rawCode !== code) redirect(`/grupo/${code}`); // URL canônica (maiúsculas)

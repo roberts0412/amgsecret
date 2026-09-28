@@ -29,6 +29,12 @@ const schema = z.object({
   ),
   /** E-mail de contato exibido na Política de Privacidade (LGPD). */
   CONTACT_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
+  /**
+   * Conexões com o banco POR PROCESSO. Com APP_WORKERS processos, o total é
+   * APP_WORKERS × DATABASE_POOL_MAX — mantenha abaixo do max_connections do
+   * PostgreSQL (padrão 100).
+   */
+  DATABASE_POOL_MAX: z.coerce.number().int().min(2).max(100).default(20),
   TRUST_PROXY: z
     .enum(["true", "false"])
     .default("false")

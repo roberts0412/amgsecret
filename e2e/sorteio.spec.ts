@@ -92,6 +92,10 @@ test("sorteio completo com exclusão, revelação individual e refazer", async (
   await expect(admin.getByText(/Sorteio realizado em \d{2}\/\d{2}\/\d{4}/)).toBeVisible();
   await expect(admin.getByText(/0\s*de 4 já viram o resultado/)).toBeVisible();
   await expect(admin.getByRole("button", { name: /Realizar sorteio/ })).toHaveCount(0);
+  await expect(admin.getByText("Ainda não viram:")).toBeVisible();
+  await expect(admin.getByRole("listitem").filter({ hasText: "Maria" }).getByText("ainda não viu")).toBeVisible();
+  const cobrar = await admin.getByRole("link", { name: "Cobrar quem ainda não viu (4)" }).getAttribute("href");
+  expect(decodeURIComponent(cobrar!)).toContain("Ainda não viram quem tiraram: Robert, Maria, João, Carlos.");
 
   // cada um revela o seu
   const result: Record<string, string> = {};
@@ -108,6 +112,9 @@ test("sorteio completo com exclusão, revelação individual e refazer", async (
   // (a aba do organizador foi usada para revelar; volta ao painel)
   await admin.goto(`/grupo/${code}/admin`);
   await expect(admin.getByText(/4\s*de 4 já viram o resultado/)).toBeVisible();
+  await expect(admin.getByText("🎉 Todo mundo já viu quem tirou!")).toBeVisible();
+  await expect(admin.getByRole("listitem").filter({ hasText: "Carlos" }).getByText("já viu ✓")).toBeVisible();
+  await expect(admin.getByRole("link", { name: /Cobrar quem ainda não viu/ })).toHaveCount(0);
   const adminHtml = await admin.content();
   expect(adminHtml).not.toContain("friend-name");
 

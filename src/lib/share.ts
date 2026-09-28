@@ -54,3 +54,15 @@ export function drawDoneMessage(groupName: string, url: string): string {
     url,
   ].join("\n");
 }
+
+/** Lembrete para quem ainda não abriu o resultado (sem revelar nada). */
+export function notViewedReminderMessage(groupName: string, names: string[], url: string): string {
+  const who = names.length <= 8 ? names.join(", ") : `${names.slice(0, 8).join(", ")} e mais ${names.length - 8}`;
+  return [
+    `🎁 O sorteio do amigo secreto *${groupName}* já foi feito!`,
+    `Ainda não viram quem tiraram: ${who}.`,
+    "",
+    "Abra o link, entre na sua área e toque em \"Revelar\" 🤫",
+    url,
+  ].join("\n");
+}

@@ -310,3 +310,20 @@ describe("refazer / reabrir", () => {
     expect(await codeOf(reopenGroup(db, people.Maria!))).toBe("FORBIDDEN");
   });
 });
+
+describe("painel: quem já viu o resultado", () => {
+  it("mostra viu/não viu por pessoa, sem expor pares", async () => {
+    const { getOrganizerView } = await import("./groups");
+    const { org, people } = await setup(["Maria", "João", "Carlos"], ["Pendente"]);
+    let view = await getOrganizerView(db, org);
+    expect(view.participants.every((p) => p.viewed === null)).toBe(true); // sem sorteio
+
+    await runDraw(db, org);
+    await revealMyResult(db, people.Maria!);
+    view = await getOrganizerView(db, org);
+    const byName = Object.fromEntries(view.participants.map((p) => [p.name, p.viewed]));
+    expect(byName).toEqual({ Robert: false, Maria: true, João: false, Carlos: false, Pendente: null });
+    // nada sobre quem tirou quem
+    expect(JSON.stringify(view)).not.toMatch(/receiver|giver|friend/i);
+  });
+});

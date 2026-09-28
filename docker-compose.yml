@@ -51,6 +51,8 @@ services:
       CONTACT_EMAIL: ${CONTACT_EMAIL:-}
       # atrás do Caddy (proxy confiável): usa o IP real do visitante no rate limit
       TRUST_PROXY: "true"
+      # processos do site (padrão: 1 por núcleo, até 8)
+      APP_WORKERS: ${APP_WORKERS:-}
     depends_on:
       migrate:
         condition: service_completed_successfully

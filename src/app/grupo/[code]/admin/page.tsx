@@ -10,7 +10,7 @@ import {
 } from "@/components/draw-forms";
 import { EditGroupForm, RemoveParticipantButton } from "@/components/forms";
 import { DeleteGroupForm, ThemePicker } from "@/components/share-buttons";
-import { btn, Card, CardTitle, ExternalLink, PageShell, StatusBadge } from "@/components/ui";
+import { Badge, btn, Card, CardTitle, ExternalLink, PageShell, StatusBadge } from "@/components/ui";
 import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { MIN_PARTICIPANTS } from "@/lib/draw/draw";
@@ -18,9 +18,10 @@ import { formatDateTime } from "@/lib/format";
 import { getEnv } from "@/lib/env";
 import { PLANS } from "@/lib/plans";
 import { getDrawReadiness, listExclusions } from "@/lib/services/draws";
-import { drawDoneMessage, groupUrl, reminderMessage, whatsappShareUrl } from "@/lib/share";
+import { drawDoneMessage, groupUrl, notViewedReminderMessage, reminderMessage, whatsappShareUrl } from "@/lib/share";
 import { effectiveTheme, THEMES } from "@/lib/themes";
-import { getOrganizerView, getPublicGroupView } from "@/lib/services/groups";
+import { getGroupView } from "@/lib/queries";
+import { getOrganizerView } from "@/lib/services/groups";
 
 type Props = { params: Promise<{ code: string }> };
 
@@ -34,7 +35,7 @@ function centsToInput(cents: number | null): string | undefined {
 
 export default async function AdminPage({ params }: Props) {
   const { code: rawCode } = await params;
-  const group = await getPublicGroupView(getDb(), rawCode);
+  const group = await getGroupView(rawCode);
   if (!group) notFound();
   const { code } = group;
 
@@ -52,6 +53,8 @@ export default async function AdminPage({ params }: Props) {
   const isOpen = group.status === "OPEN";
   const publicUrl = groupUrl(getEnv().APP_URL, code);
   const pendingNames = view.participants.filter((p) => p.status === "INVITED").map((p) => p.name);
+  const notViewedNames = view.participants.filter((p) => p.viewed === false).map((p) => p.name);
+  const everyoneViewed = readiness.status === "DRAWN" && readiness.pairCount > 0 && notViewedNames.length === 0;
 
   return (
     <PageShell>
@@ -69,7 +72,13 @@ export default async function AdminPage({ params }: Props) {
                 {p.name}
                 {p.role === "ORGANIZER" && <span className="ml-1 text-xs text-slate-500">· você</span>}
               </span>
-              <StatusBadge status={p.status} />
+              {p.viewed === null ? (
+                <StatusBadge status={p.status} />
+              ) : p.viewed ? (
+                <Badge color="green">já viu ✓</Badge>
+              ) : (
+                <Badge color="amber">ainda não viu</Badge>
+              )}
               {isOpen && p.role !== "ORGANIZER" && (
                 <RemoveParticipantButton code={code} participantId={p.id} name={p.name} />
               )}
@@ -89,6 +98,27 @@ export default async function AdminPage({ params }: Props) {
               ✅ Sorteio realizado{readiness.drawnAt && ` em ${formatDateTime(readiness.drawnAt)}`}.{" "}
               <strong>{readiness.viewedCount}</strong> de {readiness.pairCount} já viram o resultado.
             </p>
+            {readiness.pairCount > 0 && (
+              <div>
+                <div
+                  className="h-3 overflow-hidden rounded-full bg-slate-100"
+                  role="progressbar"
+                  aria-label="Quantos já viram o resultado"
+                  aria-valuemin={0}
+                  aria-valuemax={readiness.pairCount}
+                  aria-valuenow={readiness.viewedCount}
+                >
+                  <div className="h-full rounded-full bg-green-500" style={{ width: `${Math.round((readiness.viewedCount / readiness.pairCount) * 100)}%` }} />
+                </div>
+                {everyoneViewed ? (
+                  <p className="mt-2 font-semibold text-green-800">🎉 Todo mundo já viu quem tirou!</p>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-700">
+                    Ainda não viram: <strong>{notViewedNames.join(", ")}</strong>
+                  </p>
+                )}
+              </div>
+            )}
             <p className="text-sm text-slate-600">
               Nem você, como organizador, consegue ver quem tirou quem. 🔒
             </p>
@@ -129,9 +159,19 @@ export default async function AdminPage({ params }: Props) {
         <Card>
           <CardTitle>📣 Avisar o grupo</CardTitle>
           {readiness.status === "DRAWN" ? (
-            <ExternalLink href={whatsappShareUrl(drawDoneMessage(group.name, publicUrl))} className={btn.whatsapp}>
-              Avisar que o sorteio foi feito
-            </ExternalLink>
+            <div className="flex flex-col gap-2">
+              {notViewedNames.length > 0 && (
+                <ExternalLink
+                  href={whatsappShareUrl(notViewedReminderMessage(group.name, notViewedNames, publicUrl))}
+                  className={btn.whatsapp}
+                >
+                  Cobrar quem ainda não viu ({notViewedNames.length})
+                </ExternalLink>
+              )}
+              <ExternalLink href={whatsappShareUrl(drawDoneMessage(group.name, publicUrl))} className={notViewedNames.length > 0 ? btn.secondary : btn.whatsapp}>
+                Avisar que o sorteio foi feito
+              </ExternalLink>
+            </div>
           ) : (
             <ExternalLink href={whatsappShareUrl(reminderMessage(group.name, pendingNames, publicUrl))} className={btn.whatsapp}>
               Cobrar quem não confirmou ({pendingNames.length})

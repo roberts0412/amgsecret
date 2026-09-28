@@ -40,8 +40,10 @@ ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --chown=node:node docker/check-env.mjs ./check-env.mjs
+COPY --chown=node:node docker/server-cluster.mjs ./server-cluster.mjs
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["sh", "-c", "node check-env.mjs && exec node server.js"]
+# um processo por núcleo (APP_WORKERS para ajustar)
+CMD ["sh", "-c", "node check-env.mjs && exec node server-cluster.mjs"]

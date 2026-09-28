@@ -6,7 +6,7 @@ import { nameKey } from "@/lib/text";
 export function testDb(): PrismaClient {
   const url = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
   if (!url) throw new Error("TEST_DATABASE_URL ausente");
-  return createPrismaClient(url);
+  return createPrismaClient(url, 20);
 }
 
 export async function truncateAll(db: PrismaClient) {

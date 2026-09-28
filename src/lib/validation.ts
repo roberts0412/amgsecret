@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AppError } from "@/lib/errors";
+import { checkPin, PIN_LENGTH } from "@/lib/pin-rules";
 import { cleanLine, cleanMultiline } from "@/lib/text";
 
 /**
@@ -170,6 +171,28 @@ const optionalPhone = z.preprocess(
 );
 
 // ---------------------------------------------------------------------------
+// PIN de recuperação
+// ---------------------------------------------------------------------------
+
+export const pinSchema = z
+  .string({ error: `Crie um PIN de ${PIN_LENGTH} números.` })
+  .transform((v) => v.replace(/\s/g, ""))
+  .superRefine((pin, ctx) => {
+    const problem = checkPin(pin);
+    if (problem === "FORMAT") ctx.addIssue({ code: "custom", message: `O PIN deve ter exatamente ${PIN_LENGTH} números.` });
+    if (problem === "WEAK") ctx.addIssue({ code: "custom", message: "PIN fácil demais de adivinhar. Evite sequências e repetições." });
+  });
+
+/** Exige que "pinConfirm" seja igual a "pin". */
+function pinsMatch(data: { pin: string; pinConfirm?: string }, ctx: z.RefinementCtx) {
+  if ((data.pinConfirm ?? "").replace(/\s/g, "") !== data.pin) {
+    ctx.addIssue({ code: "custom", path: ["pinConfirm"], message: "Os PINs não são iguais." });
+  }
+}
+
+const pinFields = { pin: pinSchema, pinConfirm: z.string().optional() };
+
+// ---------------------------------------------------------------------------
 // Schemas dos formulários
 // ---------------------------------------------------------------------------
 
@@ -186,18 +209,41 @@ export const groupDetailsSchema = (now = new Date()) =>
   });
 
 export const createGroupSchema = (now = new Date()) =>
-  groupDetailsSchema(now).extend({ organizerName: personNameSchema });
+  groupDetailsSchema(now).extend({ organizerName: personNameSchema, ...pinFields }).superRefine(pinsMatch);
 
-export const joinGroupSchema = z.object({
+export const joinGroupSchema = z
+  .object({
+    name: personNameSchema,
+    nickname: optionalLine(40, "o apelido"),
+    email: optionalEmail,
+    phone: optionalPhone,
+    ...pinFields,
+  })
+  .superRefine(pinsMatch);
+
+/** Recuperar acesso: nome + PIN (sem regras de força — só o formato). */
+export const recoverAccessSchema = z.object({
   name: personNameSchema,
-  nickname: optionalLine(40, "o apelido"),
-  email: optionalEmail,
-  phone: optionalPhone,
+  pin: z
+    .string({ error: "Informe seu PIN." })
+    .transform((v) => v.replace(/\s/g, ""))
+    .pipe(z.string().regex(new RegExp(`^\\d{${PIN_LENGTH}}$`), `O PIN tem ${PIN_LENGTH} números.`)),
 });
+
+/** Criar/trocar PIN estando logado. */
+export const setPinSchema = z.object(pinFields).superRefine(pinsMatch);
 
 export type GroupDetailsInput = z.infer<ReturnType<typeof groupDetailsSchema>>;
 export type CreateGroupInput = z.infer<ReturnType<typeof createGroupSchema>>;
 export type JoinGroupInput = z.infer<typeof joinGroupSchema>;
+
+/**
+ * Valores seguros para devolver ao formulário após erro: nunca devolve PINs
+ * (eles iriam parar no HTML/payload da página).
+ */
+export function echoableValues(values: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(values).filter(([k]) => !/pin|token/i.test(k)));
+}
 
 /** Converte FormData em objeto (só campos de texto; ignora arquivos). */
 export function formToObject(form: FormData): Record<string, string> {

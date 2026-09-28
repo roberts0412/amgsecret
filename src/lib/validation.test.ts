@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { AppError } from "./errors";
 import {
   createGroupSchema,
+  echoableValues,
   formatCents,
   joinGroupSchema,
   parseBRLToCents,
   parseInput,
+  recoverAccessSchema,
   todayInEventTz,
 } from "./validation";
 
@@ -40,11 +42,11 @@ describe("parseBRLToCents", () => {
 
 describe("createGroupSchema", () => {
   const now = new Date("2026-09-28T15:00:00Z");
-  const base = { name: "Natal da Família", organizerName: "Robert" };
+  const base = { name: "Natal da Família", organizerName: "Robert", pin: "482915", pinConfirm: "482915" };
 
   it("aceita o mínimo e transforma vazios em undefined", () => {
     const r = parseInput(createGroupSchema(now), { ...base, description: "  ", eventDate: "", giftValue: "" });
-    expect(r).toEqual({ name: "Natal da Família", organizerName: "Robert" });
+    expect(r).toEqual({ name: "Natal da Família", organizerName: "Robert", pin: "482915", pinConfirm: "482915" });
   });
 
   it("limpa textos e converte valor", () => {
@@ -79,6 +81,7 @@ describe("createGroupSchema", () => {
 
   it("aponta erros por campo", () => {
     const errs = errorsOf({
+      ...base,
       name: "ab",
       organizerName: " ",
       eventDate: "2026-02-30",
@@ -91,7 +94,7 @@ describe("createGroupSchema", () => {
   });
 
   it("campo obrigatório ausente", () => {
-    expect(errorsOf({ name: "Grupo" }).organizerName).toBe("Informe o nome.");
+    expect(errorsOf({ name: "Grupo", pin: "482915", pinConfirm: "482915" }).organizerName).toBe("Informe o nome.");
   });
 
   it("data no passado ou muito distante", () => {
@@ -122,9 +125,10 @@ describe("todayInEventTz", () => {
 
 describe("joinGroupSchema", () => {
   it("normaliza e-mail e telefone", () => {
-    const r = parseInput(joinGroupSchema, { name: "Maria", email: " Maria@Email.COM ", phone: "(11) 98765-4321" });
-    expect(r).toEqual({ name: "Maria", email: "maria@email.com", phone: "11987654321" });
-    expect(parseInput(joinGroupSchema, { name: "Jo", phone: "+55 11 98765-4321" }).phone).toBe("+5511987654321");
+    const pin = { pin: "482915", pinConfirm: "482915" };
+    const r = parseInput(joinGroupSchema, { name: "Maria", email: " Maria@Email.COM ", phone: "(11) 98765-4321", ...pin });
+    expect(r).toEqual({ name: "Maria", email: "maria@email.com", phone: "11987654321", ...pin });
+    expect(parseInput(joinGroupSchema, { name: "Jo", phone: "+55 11 98765-4321", ...pin }).phone).toBe("+5511987654321");
   });
 
   it("recusa contato inválido e nome curto", () => {
@@ -142,7 +146,7 @@ describe("mensagens de campo obrigatório", () => {
   it("vazio diz 'Informe', curto diz 'pelo menos'", () => {
     const err = (name: string) => {
       try {
-        parseInput(joinGroupSchema, { name });
+        parseInput(joinGroupSchema, { name, pin: "482915", pinConfirm: "482915" });
       } catch (e) {
         return (e as AppError).fieldErrors?.name;
       }
@@ -150,5 +154,29 @@ describe("mensagens de campo obrigatório", () => {
     expect(err("")).toBe("Informe o nome.");
     expect(err("   ")).toBe("Informe o nome.");
     expect(err("A")).toBe("O nome precisa ter pelo menos 2 caracteres.");
+  });
+});
+
+describe("PIN nos formulários", () => {
+  const fieldErrors = (data: object) => {
+    try {
+      parseInput(joinGroupSchema, { name: "Maria", ...data });
+    } catch (e) {
+      return (e as AppError).fieldErrors ?? {};
+    }
+    return {};
+  };
+
+  it("obrigatório, 6 números, não óbvio e confirmado", () => {
+    expect(fieldErrors({}).pin).toMatch(/Crie um PIN/);
+    expect(fieldErrors({ pin: "1234", pinConfirm: "1234" }).pin).toMatch(/exatamente 6/);
+    expect(fieldErrors({ pin: "123456", pinConfirm: "123456" }).pin).toMatch(/fácil demais/);
+    expect(fieldErrors({ pin: "482915", pinConfirm: "482916" }).pinConfirm).toBe("Os PINs não são iguais.");
+    expect(fieldErrors({ pin: "482 915", pinConfirm: "482915" })).toEqual({}); // espaços ignorados
+  });
+
+  it("recuperação só checa o formato", () => {
+    expect(parseInput(recoverAccessSchema, { name: " maria ", pin: "123456" })).toEqual({ name: "maria", pin: "123456" });
+    expect(() => parseInput(recoverAccessSchema, { name: "Maria", pin: "12a456" })).toThrow(AppError);
   });
 });

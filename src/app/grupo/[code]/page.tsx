@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { logoutAction } from "@/actions/groups";
-import { ConfirmParticipationForm, CopyButton, JoinGroupForm } from "@/components/forms";
+import { ConfirmParticipationForm, CopyButton, JoinGroupForm, SetPinForm } from "@/components/forms";
 import { Alert, btn, Card, CardTitle, ExternalLink, PageShell, StatusBadge } from "@/components/ui";
 import { getSession, getSessionToken } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
 import { formatCents, formatWhen } from "@/lib/format";
 import { getPublicGroupView } from "@/lib/services/groups";
+import { hasPin } from "@/lib/services/participants";
 import { groupUrl, inviteMessage, whatsappShareUrl } from "@/lib/share";
 
 type Props = { params: Promise<{ code: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -35,6 +36,7 @@ export default async function GroupPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const me = await getSession(code);
   const token = me ? await getSessionToken(code) : null;
+  const meHasPin = me ? await hasPin(getDb(), me) : false;
   const { APP_URL } = getEnv();
   const publicUrl = groupUrl(APP_URL, code);
   const privateUrl = token ? new URL(`/acesso/${token}`, APP_URL).toString() : null;
@@ -47,6 +49,11 @@ export default async function GroupPage({ params, searchParams }: Props) {
         <Alert tone="success">Grupo criado! 🎉 Agora convide a galera pelo WhatsApp.</Alert>
       )}
       {me && sp.entrou === "1" && <Alert tone="success">Você entrou no grupo! Confirme sua participação abaixo.</Alert>}
+      {me && sp.recuperado === "1" && (
+        <Alert tone="success">
+          Acesso recuperado! 🔑 Seu link privado mudou — o antigo não funciona mais. Guarde o novo (abaixo).
+        </Alert>
+      )}
 
       <Card>
         <p className="text-sm font-medium text-brand">Amigo secreto</p>
@@ -104,12 +111,31 @@ export default async function GroupPage({ params, searchParams }: Props) {
         <Card>
           <CardTitle>Participar</CardTitle>
           <JoinGroupForm code={code} />
+          <p className="mt-4 text-center text-sm">
+            Já participa?{" "}
+            <Link href={`/grupo/${code}/recuperar`} className="font-medium text-brand underline">
+              Recuperar meu acesso
+            </Link>
+          </p>
         </Card>
       ) : (
         <Alert>
-          O sorteio deste grupo já foi realizado. Se você participa, abra o seu <strong>link privado</strong> para ver quem
-          você tirou.
+          O sorteio deste grupo já foi realizado. Se você participa, abra o seu <strong>link privado</strong> ou{" "}
+          <Link href={`/grupo/${code}/recuperar`} className="font-medium underline">
+            recupere seu acesso com o PIN
+          </Link>
+          .
         </Alert>
+      )}
+
+      {me && !meHasPin && (
+        <Card highlight>
+          <CardTitle>🔒 Crie seu PIN de recuperação</CardTitle>
+          <p className="mb-3 text-sm text-slate-700">
+            Sem PIN, se você perder o link não será possível recuperar o acesso.
+          </p>
+          <SetPinForm code={code} hasPin={false} />
+        </Card>
       )}
 
       {me && (
@@ -152,7 +178,26 @@ export default async function GroupPage({ params, searchParams }: Props) {
           <p className="mb-3 text-sm text-slate-700">
             É a sua chave para ver quem você tirou, neste ou em outro celular. <strong>Guarde e não compartilhe.</strong>
           </p>
-          <CopyButton text={privateUrl} label="Copiar meu link privado" />
+          <div className="flex flex-col gap-2">
+            <CopyButton text={privateUrl} label="Copiar meu link privado" />
+            <ExternalLink
+              href={whatsappShareUrl(`🔑 Meu link privado do amigo secreto "${group.name}" (não compartilhe):\n${privateUrl}`)}
+              className={btn.secondary}
+            >
+              Salvar no meu WhatsApp
+            </ExternalLink>
+            <p className="text-xs text-slate-500">
+              Dica: no WhatsApp, envie para você mesmo (&quot;Você&quot; no topo da lista de contatos).
+            </p>
+          </div>
+          {meHasPin && (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-sm text-slate-600">Trocar meu PIN</summary>
+              <div className="mt-3">
+                <SetPinForm code={code} hasPin />
+              </div>
+            </details>
+          )}
           <form action={logoutAction} className="mt-3 text-center">
             <input type="hidden" name="code" value={code} />
             <button type="submit" className="text-sm text-slate-500 underline">

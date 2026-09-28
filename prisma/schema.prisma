@@ -84,13 +84,20 @@ model Participant {
   role     ParticipantRole   @default(MEMBER)
   status   ParticipantStatus @default(INVITED)
 
-  tokenHash     String    @unique @db.Char(64) // sha256(token) em hex
-  tokenIssuedAt DateTime  @default(now())
-  lastSeenAt    DateTime?
-  confirmedAt   DateTime?
-  removedAt     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  tokenHash     String   @unique @db.Char(64) // sha256(token) em hex
+  tokenIssuedAt DateTime @default(now())
+
+  // Recuperação de acesso por PIN (ver src/lib/security/pin.ts).
+  // pinHash = scrypt(HMAC(chave do servidor, PIN), sal) — sem a chave do
+  // servidor, um dump do banco não permite testar os 10^6 PINs possíveis.
+  pinHash           String?   @db.VarChar(200)
+  pinFailedAttempts Int       @default(0)
+  pinLockedUntil    DateTime?
+  lastSeenAt        DateTime?
+  confirmedAt       DateTime?
+  removedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   createdGroup   Group?          @relation("GroupCreator")
   exclusions     Exclusion[]     @relation("ExclusionOwner")

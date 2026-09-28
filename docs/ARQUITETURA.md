@@ -135,10 +135,29 @@ várias instâncias): criar grupo 10/h, entrar 30/h, link privado 20/10min,
 busca de código 60/10min, ações 60–120/10min. `X-Forwarded-For` só é usado com
 `TRUST_PROXY=true`.
 
-**Pendente (decisão para a Etapa 4):** "regenerar link" de um participante que
-perdeu o celular. Se o organizador puder gerar um link novo, ele poderia entrar
-como a pessoa e ver o resultado dela — precisa de um desenho que não quebre o
-sigilo.
+### Recuperação de acesso: PIN (decisão: o mais seguro e grátis)
+
+Descartado: "organizador gera link novo" (ele poderia entrar como a pessoa e
+ver o resultado), e-mail/SMS (custo/serviço externo), passkeys (UX difícil).
+
+- Ao criar/entrar no grupo, cada pessoa cria um **PIN de 6 números**
+  (obrigatório). PINs óbvios são recusados (123456, 111111, 121212, 123123…).
+- Guardado como `scrypt(HMAC(pepper, PIN), sal)`. O *pepper* é derivado de
+  `APP_SECRET`: com só o banco, não dá para testar os 10^6 PINs offline.
+- Recuperar: `/grupo/<código>/recuperar` → nome + PIN → **gera token novo**
+  (o link do celular perdido para de funcionar).
+- Mesma mensagem ("Nome ou PIN incorretos.") para nome inexistente, sem PIN,
+  removido ou PIN errado; participante inexistente também passa pelo scrypt.
+- **Bloqueio por participante**: cada tentativa é reservada num UPDATE atômico
+  antes de conferir o PIN, e a 5ª tentativa já grava o bloqueio — nem ataques
+  em paralelo passam de 5 palpites por rodada (testado com 30 simultâneos).
+  Bloqueio progressivo: 15 min, 30 min, 1 h… até 24 h. Mais rate limit por IP.
+- O PIN nunca volta ao formulário após erro (não vai para HTML/payload).
+- Logado, a pessoa pode trocar o PIN. Esqueceu o PIN e perdeu o link: não há
+  recuperação — por desenho, nem o organizador consegue.
+- Trade-off aceito: alguém que erre o PIN de propósito pode bloquear
+  temporariamente a recuperação de outra pessoa (não afeta quem já está logado).
+- "Salvar no meu WhatsApp" ajuda a guardar o link privado.
 
 ## 7. Segurança
 

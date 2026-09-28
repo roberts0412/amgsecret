@@ -7,7 +7,9 @@ import {
   createGroupAction,
   goToGroupAction,
   joinGroupAction,
+  recoverAccessAction,
   removeParticipantAction,
+  setPinAction,
   updateGroupAction,
 } from "@/actions/groups";
 import { initialActionState } from "@/lib/action-state";
@@ -40,6 +42,29 @@ function GroupDetailsFields({
   );
 }
 
+/**
+ * PIN de recuperação + confirmação. type=password com teclado numérico:
+ * não aparece na tela nem fica no preenchimento automático como texto comum.
+ */
+function PinFields({ state, label = "Crie um PIN de 6 números" }: { state: typeof initialActionState; label?: string }) {
+  const common = {
+    type: "password",
+    inputMode: "numeric" as const,
+    pattern: "[0-9]*",
+    maxLength: 6,
+    autoComplete: "new-password",
+    state,
+  };
+  return (
+    <fieldset className="flex flex-col gap-3 rounded-xl bg-amber-50 p-3 ring-1 ring-amber-200">
+      <legend className="sr-only">PIN de recuperação</legend>
+      <Field name="pin" label={label} {...common}
+        hint="Serve para recuperar seu acesso se você perder o link. Não use data de nascimento nem 123456." />
+      <Field name="pinConfirm" label="Repita o PIN" {...common} />
+    </fieldset>
+  );
+}
+
 export function CreateGroupForm() {
   const [state, action] = useActionState(createGroupAction, initialActionState);
   return (
@@ -49,6 +74,7 @@ export function CreateGroupForm() {
       <Field name="organizerName" label="Seu nome" state={state} required minLength={2} maxLength={60}
         placeholder="Como o grupo te conhece" autoComplete="given-name"
         hint="Você também participa do sorteio." />
+      <PinFields state={state} />
       <SubmitButton pendingText="Criando…">Criar amigo secreto</SubmitButton>
     </form>
   );
@@ -97,6 +123,7 @@ export function JoinGroupForm({ code }: { code: string }) {
           + Apelido, e-mail ou celular
         </button>
       )}
+      <PinFields state={state} />
       <SubmitButton pendingText="Entrando…">Entrar no grupo</SubmitButton>
     </form>
   );
@@ -173,5 +200,34 @@ export function CopyButton({ text, label = "Copiar link" }: { text: string; labe
     >
       {copied ? "Copiado! ✓" : label}
     </button>
+  );
+}
+
+export function RecoverAccessForm({ code }: { code: string }) {
+  const [state, action] = useActionState(recoverAccessAction, initialActionState);
+  return (
+    <form action={action} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="code" value={code} />
+      <FormMessage state={state} />
+      <Field name="name" label="Seu nome no grupo" state={state} required maxLength={60} autoComplete="name" />
+      <Field name="pin" label="Seu PIN" type="password" inputMode="numeric" pattern="[0-9]*" maxLength={6}
+        autoComplete="current-password" state={state} />
+      <SubmitButton pendingText="Verificando…">Recuperar meu acesso</SubmitButton>
+      <p className="text-xs text-slate-500">
+        Por segurança, após 5 tentativas erradas o acesso fica bloqueado por um tempo.
+      </p>
+    </form>
+  );
+}
+
+export function SetPinForm({ code, hasPin }: { code: string; hasPin: boolean }) {
+  const [state, action] = useActionState(setPinAction, initialActionState);
+  return (
+    <form action={action} className="flex flex-col gap-3" noValidate>
+      <input type="hidden" name="code" value={code} />
+      <FormMessage state={state} />
+      <PinFields state={state} label={hasPin ? "Novo PIN (6 números)" : "Crie um PIN de 6 números"} />
+      <SubmitButton variant="secondary" pendingText="Salvando…">{hasPin ? "Trocar PIN" : "Salvar PIN"}</SubmitButton>
+    </form>
   );
 }

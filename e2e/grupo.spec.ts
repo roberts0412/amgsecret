@@ -10,6 +10,13 @@ async function newPhone(browser: Browser): Promise<{ ctx: BrowserContext; page: 
   return { ctx, page: await ctx.newPage() };
 }
 
+const PIN = "730164";
+
+async function fillPin(page: Page, pin = PIN) {
+  await page.getByLabel(/Crie um PIN/).fill(pin);
+  await page.getByLabel("Repita o PIN").fill(pin);
+}
+
 async function createGroup(page: Page, name = "Natal da Família") {
   await page.goto("/");
   await page.getByRole("link", { name: "Criar amigo secreto" }).click();
@@ -18,6 +25,7 @@ async function createGroup(page: Page, name = "Natal da Família") {
   await page.getByLabel("Local").fill("Casa da vó");
   await page.getByLabel("Valor do presente (R$)").fill("100,00");
   await page.getByLabel("Seu nome").fill("Robert");
+  await fillPin(page, "905527");
   await page.getByRole("button", { name: "Criar amigo secreto" }).click();
   await expect(page).toHaveURL(/\/grupo\/[A-Z2-9]{6}\?novo=1$/);
   return new URL(page.url()).pathname.split("/")[2]!;
@@ -31,6 +39,7 @@ function sessionCookie(cookies: { name: string; value: string }[], code: string)
 async function join(page: Page, code: string, name: string) {
   await page.goto(`/grupo/${code}`);
   await page.getByLabel("Seu nome").fill(name);
+  await fillPin(page);
   await page.getByRole("button", { name: "Entrar no grupo" }).click();
   await expect(page.getByRole("heading", { name: `Olá, ${name}!` })).toBeVisible();
 }
@@ -72,6 +81,7 @@ test("fluxo completo: criar, entrar, confirmar, acompanhar e remover", async ({ 
   const outra = await newPhone(browser);
   await outra.page.goto(`/grupo/${code}`);
   await outra.page.getByLabel("Seu nome").fill("maria");
+  await fillPin(outra.page);
   await outra.page.getByRole("button", { name: "Entrar no grupo" }).click();
   await expect(outra.page.getByText(/Já existe alguém chamado "maria"/)).toBeVisible();
   await expect(outra.page.getByLabel("Seu nome")).toHaveValue("maria");
@@ -137,6 +147,7 @@ test("validação no servidor: erros por campo e valores preservados", async ({ 
   await page.getByLabel("Nome do amigo secreto").fill("ab");
   await page.getByLabel("Valor do presente (R$)").fill("muito");
   await page.getByLabel("Local").fill("Salão <b>de festas</b>");
+  await fillPin(page, "250813");
   await page.getByRole("button", { name: "Criar amigo secreto" }).click();
   await expect(page.getByText("Confira os campos destacados.")).toBeVisible();
   await expect(page.getByText(/precisa ter pelo menos 3 caracteres/)).toBeVisible();
@@ -144,6 +155,9 @@ test("validação no servidor: erros por campo e valores preservados", async ({ 
   await expect(page.getByText("Informe o nome.")).toBeVisible();
   await expect(page.getByLabel("Local")).toHaveValue("Salão <b>de festas</b>");
   await expect(page).toHaveURL(/\/criar$/);
+  // o PIN digitado NÃO volta para a página (nem no HTML nem no payload)
+  await expect(page.getByLabel(/Crie um PIN/)).toHaveValue("");
+  expect(await page.content()).not.toContain("250813");
 });
 
 test("HTML digitado é exibido como texto (sem XSS)", async ({ page }) => {
@@ -187,6 +201,39 @@ test("entrar pelo código na tela inicial (aceita minúsculas e link colado)", a
   await guest.ctx.close();
 });
 
+test("recuperar acesso com nome + PIN em outro celular", async ({ browser }) => {
+  const org = await newPhone(browser);
+  const code = await createGroup(org.page, "Recuperação");
+  const velho = await newPhone(browser);
+  await join(velho.page, code, "Maria Souza");
+
+  // celular novo: PIN errado → mensagem genérica
+  const novo = await newPhone(browser);
+  await novo.page.goto(`/grupo/${code}`);
+  await novo.page.getByRole("link", { name: "Recuperar meu acesso" }).click();
+  await novo.page.getByLabel("Seu nome no grupo").fill("maria souza");
+  await novo.page.getByLabel("Seu PIN").fill("482915");
+  await novo.page.getByRole("button", { name: "Recuperar meu acesso" }).click();
+  await expect(novo.page.getByText("Nome ou PIN incorretos.")).toBeVisible();
+  await expect(novo.page.getByLabel("Seu PIN")).toHaveValue("");
+
+  // PIN certo → entra, com aviso de link novo
+  await novo.page.getByLabel("Seu PIN").fill(PIN);
+  await novo.page.getByRole("button", { name: "Recuperar meu acesso" }).click();
+  await expect(novo.page.getByText(/Acesso recuperado!/)).toBeVisible();
+  await expect(novo.page.getByRole("heading", { name: "Olá, Maria Souza!" })).toBeVisible();
+
+  // o celular antigo perdeu o acesso
+  await velho.page.reload();
+  await expect(velho.page.getByRole("button", { name: "Entrar no grupo" })).toBeVisible();
+
+  // botão de salvar o link no WhatsApp leva o link privado novo
+  const href = await novo.page.getByRole("link", { name: "Salvar no meu WhatsApp" }).getAttribute("href");
+  expect(decodeURIComponent(href!)).toMatch(/\/acesso\/[A-Za-z0-9_-]{43}/);
+
+  for (const p of [org, velho, novo]) await p.ctx.close();
+});
+
 /**
  * Reenvia o formulário real de /criar (campos ocultos da Server Action + dados)
  * com um Origin escolhido. Usamos a API de requests porque o Chromium ignora a
@@ -198,7 +245,7 @@ async function postCreateForm(page: Page, origin: string, groupName: string) {
     .locator('form input[type="hidden"]')
     .evaluateAll((els) => els.map((e) => [(e as HTMLInputElement).name, (e as HTMLInputElement).value] as const));
   const multipart: Record<string, string> = Object.fromEntries(hidden);
-  Object.assign(multipart, { name: groupName, organizerName: "Vítima" });
+  Object.assign(multipart, { name: groupName, organizerName: "Vítima", pin: "905527", pinConfirm: "905527" });
   return page.request.post("/criar", { headers: { origin }, multipart, maxRedirects: 0 });
 }
 

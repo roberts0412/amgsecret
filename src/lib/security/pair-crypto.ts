@@ -1,6 +1,6 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, timingSafeEqual } from "node:crypto";
-import { getEnv } from "@/lib/env";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { deriveKey, type KeyPurpose } from "./keys";
 
 /**
  * Proteção do relacionamento participante -> resultado.
@@ -18,20 +18,9 @@ const VERSION = "v1";
 const IV_BYTES = 12;
 const TAG_BYTES = 16;
 
-type Purpose = "pair-encryption" | "receiver-lookup" | "sender-lookup";
+type Purpose = Extract<KeyPurpose, "pair-encryption" | "receiver-lookup" | "sender-lookup">;
 
-const keyCache = new Map<string, Buffer>();
-
-function key(purpose: Purpose): Buffer {
-  const secret = getEnv().APP_SECRET;
-  const cacheKey = `${purpose}:${secret}`;
-  let k = keyCache.get(cacheKey);
-  if (!k) {
-    k = Buffer.from(hkdfSync("sha256", secret, "amigo-secreto/v1", purpose, 32));
-    keyCache.set(cacheKey, k);
-  }
-  return k;
-}
+const key = (purpose: Purpose) => deriveKey(purpose);
 
 /** Codificação sem ambiguidade dos campos (IDs nunca contêm "\u0000"). */
 function aad(...parts: string[]): Buffer {
@@ -96,7 +85,4 @@ export function lookupEquals(a: string, b: string): boolean {
   return x.length === y.length && timingSafeEqual(x, y);
 }
 
-/** Só para testes. */
-export function clearKeyCache(): void {
-  keyCache.clear();
-}
+export { clearKeyCache } from "./keys";

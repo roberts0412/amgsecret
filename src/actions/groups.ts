@@ -8,9 +8,18 @@ import { clearSessionCookie, getSession, setSessionCookie } from "@/lib/auth/ses
 import { getDb } from "@/lib/db/client";
 import { AppError } from "@/lib/errors";
 import { createGroup, removeParticipant, updateGroupDetails } from "@/lib/services/groups";
-import { confirmParticipation, findByAccessToken, joinGroup } from "@/lib/services/participants";
+import { confirmParticipation, findByAccessToken, joinGroup, recoverAccess, setPin } from "@/lib/services/participants";
 import { normalizeGroupCode } from "@/lib/security/tokens";
-import { createGroupSchema, formToObject, groupDetailsSchema, joinGroupSchema, parseInput } from "@/lib/validation";
+import {
+  createGroupSchema,
+  echoableValues,
+  formToObject,
+  groupDetailsSchema,
+  joinGroupSchema,
+  parseInput,
+  recoverAccessSchema,
+  setPinSchema,
+} from "@/lib/validation";
 
 /*
  * Toda Server Action é um endpoint público (POST). Regras seguidas aqui:
@@ -35,7 +44,7 @@ export async function createGroupAction(_prev: ActionState, form: FormData): Pro
     const created = await createGroup(getDb(), input);
     await setSessionCookie(created.code, created.token);
     code = created.code;
-  }, values);
+  }, echoableValues(values));
   // redirect fora do try: é um "throw" de controle do Next
   if (state.ok) redirect(`/grupo/${code}?novo=1`);
   return state;
@@ -50,7 +59,7 @@ export async function joinGroupAction(_prev: ActionState, form: FormData): Promi
     const input = parseInput(joinGroupSchema, values);
     const joined = await joinGroup(getDb(), code, input);
     await setSessionCookie(joined.code, joined.token);
-  }, values);
+  }, echoableValues(values));
   if (state.ok) redirect(`/grupo/${code}?entrou=1`);
   return state;
 }
@@ -109,6 +118,33 @@ export async function accessWithTokenAction(_prev: ActionState, form: FormData):
   });
   if (state.ok) redirect(`/grupo/${code}`);
   return state;
+}
+
+/** Recuperar acesso com nome + PIN (gera link privado novo). */
+export async function recoverAccessAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const values = formToObject(form);
+  let code = "";
+  const state = await runAction(async () => {
+    code = codeFrom(form);
+    await enforceRateLimit("recoverAccess");
+    const input = parseInput(recoverAccessSchema, values);
+    const r = await recoverAccess(getDb(), code, input);
+    await setSessionCookie(r.code, r.token);
+  }, echoableValues(values));
+  if (state.ok) redirect(`/grupo/${code}?recuperado=1`);
+  return state;
+}
+
+/** Criar/trocar PIN (logado). */
+export async function setPinAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const code = codeFrom(form);
+    await enforceRateLimit("participantAction");
+    const { pin } = parseInput(setPinSchema, formToObject(form));
+    await setPin(getDb(), await getSession(code), pin);
+    revalidatePath(`/grupo/${code}`);
+    return { ok: true, message: "PIN salvo! Guarde-o bem." };
+  });
 }
 
 /** Tela inicial: "Entrar em um grupo" digitando o código. */

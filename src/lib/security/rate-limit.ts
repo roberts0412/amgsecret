@@ -24,6 +24,8 @@ export const RATE_LIMITS = {
   createGroup: { limit: 10, windowSec: 60 * 60 },
   joinGroup: { limit: 30, windowSec: 60 * 60 },
   tokenAccess: { limit: 20, windowSec: 10 * 60 },
+  // por IP; além disso cada participante tem bloqueio próprio (5 erros)
+  recoverAccess: { limit: 10, windowSec: 10 * 60 },
   lookupGroup: { limit: 60, windowSec: 10 * 60 },
   organizerAction: { limit: 120, windowSec: 10 * 60 },
   participantAction: { limit: 60, windowSec: 10 * 60 },

@@ -18,7 +18,10 @@ const groupInput: CreateGroupInput = {
   eventTime: "20:00",
   location: "Casa da vó",
   giftValue: 10000,
+  pin: "482915",
 };
+
+const PIN = "730164";
 
 async function expectAppError(p: Promise<unknown>, code: AppError["code"]) {
   const err = await p.then(
@@ -37,7 +40,7 @@ async function setup() {
 }
 
 async function join(code: string, name: string, extra: object = {}) {
-  const r = await joinGroup(db, code, { name, ...extra });
+  const r = await joinGroup(db, code, { name, pin: PIN, ...extra });
   return { ...r, session: (await authenticate(db, code, r.token))! };
 }
 
@@ -109,20 +112,20 @@ describe("joinGroup", () => {
   it("recusa nome repetido (acento/caixa/espaços) com mensagem amigável", async () => {
     const { code } = await setup();
     await join(code, "José Silva");
-    const err = await expectAppError(joinGroup(db, code, { name: "jose  silva" }), "CONFLICT");
+    const err = await expectAppError(joinGroup(db, code, { name: "jose  silva", pin: PIN }), "CONFLICT");
     expect(err.fieldErrors?.name).toBeDefined();
-    await expectAppError(joinGroup(db, code, { name: "ROBERT" }), "CONFLICT"); // nome do organizador
+    await expectAppError(joinGroup(db, code, { name: "ROBERT", pin: PIN }), "CONFLICT"); // nome do organizador
   });
 
   it("código inexistente ou inválido", async () => {
-    await expectAppError(joinGroup(db, "ZZZZZZ", { name: "Ana" }), "NOT_FOUND");
-    await expectAppError(joinGroup(db, "'; DROP TABLE", { name: "Ana" }), "NOT_FOUND");
+    await expectAppError(joinGroup(db, "ZZZZZZ", { name: "Ana", pin: PIN }), "NOT_FOUND");
+    await expectAppError(joinGroup(db, "'; DROP TABLE", { name: "Ana", pin: PIN }), "NOT_FOUND");
   });
 
   it("não entra depois do sorteio", async () => {
     const { code } = await setup();
     await db.group.update({ where: { code }, data: { status: "DRAWN" } });
-    await expectAppError(joinGroup(db, code, { name: "Ana" }), "GROUP_LOCKED");
+    await expectAppError(joinGroup(db, code, { name: "Ana", pin: PIN }), "GROUP_LOCKED");
   });
 
   it("respeita o limite do plano", async () => {
@@ -133,7 +136,7 @@ describe("joinGroup", () => {
         groupId: group.id, name: `P${i}`, nameKey: `p${i}`, tokenHash: hashToken(`t${i}`),
       })),
     });
-    await expectAppError(joinGroup(db, code, { name: "Excedente" }), "LIMIT_REACHED");
+    await expectAppError(joinGroup(db, code, { name: "Excedente", pin: PIN }), "LIMIT_REACHED");
   });
 
   it("concorrência: nunca passa do limite, mesmo com entradas simultâneas", async () => {
@@ -146,7 +149,7 @@ describe("joinGroup", () => {
     });
     // 46 ativos; sobram 4 vagas para 20 pedidos simultâneos
     const results = await Promise.allSettled(
-      Array.from({ length: 20 }, (_, i) => joinGroup(db, code, { name: `Novo ${i}` })),
+      Array.from({ length: 20 }, (_, i) => joinGroup(db, code, { name: `Novo ${i}`, pin: PIN })),
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(4);
     for (const r of results) {
@@ -157,7 +160,7 @@ describe("joinGroup", () => {
 
   it("concorrência: mesmo nome ao mesmo tempo → só um entra", async () => {
     const { code } = await setup();
-    const results = await Promise.allSettled(Array.from({ length: 8 }, () => joinGroup(db, code, { name: "Carla" })));
+    const results = await Promise.allSettled(Array.from({ length: 8 }, () => joinGroup(db, code, { name: "Carla", pin: PIN })));
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
   });
 

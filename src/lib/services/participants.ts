@@ -1,9 +1,11 @@
 import "server-only";
 import { AppError } from "@/lib/errors";
 import { planFeatures } from "@/lib/plans";
+import { hashPin, lockDurationMs, PIN_MAX_ATTEMPTS, verifyPin } from "@/lib/security/pin";
 import { generateToken, hashToken, isWellFormedToken, normalizeGroupCode } from "@/lib/security/tokens";
 import { nameKey } from "@/lib/text";
 import type { JoinGroupInput } from "@/lib/validation";
+import { Prisma } from "@/generated/prisma/client";
 import { type Db, isUniqueViolation, lockGroup, requireParticipant, type SessionParticipant } from "./common";
 
 /** Atualiza lastSeenAt no máximo a cada 5 min (evita 1 escrita por página). */
@@ -19,6 +21,7 @@ export async function joinGroup(db: Db, rawCode: string, input: JoinGroupInput):
   const code = normalizeGroupCode(rawCode);
   if (!code) throw new AppError("NOT_FOUND", "Grupo não encontrado. Confira o link.");
   const token = generateToken();
+  const pinHash = await hashPin(input.pin); // antes da transação: scrypt é lento
 
   try {
     await db.$transaction(async (tx) => {
@@ -49,6 +52,7 @@ export async function joinGroup(db: Db, rawCode: string, input: JoinGroupInput):
           email: input.email ?? null,
           phone: input.phone ?? null,
           tokenHash: hashToken(token),
+          pinHash,
           status: "INVITED",
         },
       });
@@ -119,4 +123,99 @@ export async function confirmParticipation(db: Db, session: SessionParticipant |
       data: { status: "CONFIRMED", confirmedAt: new Date() },
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Recuperação de acesso por PIN
+// ---------------------------------------------------------------------------
+
+const RECOVERY_FAILED = "Nome ou PIN incorretos.";
+
+/**
+ * Recupera o acesso com nome + PIN. Em caso de sucesso GERA UM TOKEN NOVO:
+ * o link antigo (talvez no celular perdido) deixa de funcionar.
+ *
+ * Segurança:
+ * - mesma mensagem para "nome não existe", "sem PIN" e "PIN errado";
+ * - participante inexistente também passa pelo scrypt (tempo igual);
+ * - cada tentativa é RESERVADA no banco antes de conferir o PIN, num único
+ *   UPDATE atômico que já grava o bloqueio na 5ª tentativa da rodada. Assim,
+ *   nem tentativas em paralelo passam de 5 palpites por rodada;
+ * - bloqueio progressivo: 15 min, 30 min, 1 h... até 24 h.
+ */
+export async function recoverAccess(
+  db: Db,
+  rawCode: string,
+  input: { name: string; pin: string },
+  now = new Date(),
+): Promise<JoinResult> {
+  const code = normalizeGroupCode(rawCode);
+  if (!code) throw new AppError("NOT_FOUND", "Grupo não encontrado. Confira o link.");
+
+  const p = await db.participant.findFirst({
+    where: { nameKey: nameKey(input.name), status: { not: "REMOVED" }, group: { code, status: { not: "ARCHIVED" } } },
+    select: { id: true, pinHash: true },
+  });
+  if (!p) {
+    await verifyPin(input.pin, null); // mesmo custo de tempo
+    throw new AppError("UNAUTHORIZED", RECOVERY_FAILED);
+  }
+
+  // As colunas DateTime do Prisma são "timestamp" em UTC. Convertemos `now`
+  // explicitamente para UTC (um cast simples usaria o fuso da sessão do banco).
+  const nowUtc = Prisma.sql`(${now.toISOString()}::timestamptz AT TIME ZONE 'UTC')`;
+  // reserva a tentativa; se estiver bloqueado, nenhuma linha é atualizada
+  const reserved = await db.$queryRaw<{ attempts: number }[]>(Prisma.sql`
+    UPDATE "Participant"
+       SET "pinFailedAttempts" = "pinFailedAttempts" + 1,
+           "pinLockedUntil" = CASE
+             WHEN ("pinFailedAttempts" + 1) % ${PIN_MAX_ATTEMPTS}::int = 0
+             THEN ${nowUtc} + make_interval(mins => LEAST(15 * power(2, ("pinFailedAttempts" + 1) / ${PIN_MAX_ATTEMPTS}::int - 1), 1440)::int)
+             ELSE NULL END
+     WHERE id = ${p.id}
+       AND ("pinLockedUntil" IS NULL OR "pinLockedUntil" <= ${nowUtc})
+ RETURNING "pinFailedAttempts" AS attempts`);
+
+  if (reserved.length === 0) {
+    const locked = await db.participant.findUnique({ where: { id: p.id }, select: { pinLockedUntil: true } });
+    throw new AppError("RATE_LIMITED", lockedMessage(locked?.pinLockedUntil ?? now, now));
+  }
+
+  if (!(await verifyPin(input.pin, p.pinHash))) {
+    const attempts = reserved[0]!.attempts;
+    if (lockDurationMs(attempts) > 0) {
+      throw new AppError("RATE_LIMITED", lockedMessage(new Date(now.getTime() + lockDurationMs(attempts)), now));
+    }
+    throw new AppError("UNAUTHORIZED", RECOVERY_FAILED);
+  }
+
+  // PIN certo: token novo (derruba o link antigo) e zera o contador/bloqueio
+  const token = generateToken();
+  await db.participant.update({
+    where: { id: p.id },
+    data: { tokenHash: hashToken(token), tokenIssuedAt: now, pinFailedAttempts: 0, pinLockedUntil: null },
+  });
+  return { code, token };
+}
+
+function lockedMessage(until: Date, now: Date): string {
+  const minutes = Math.max(1, Math.ceil((until.getTime() - now.getTime()) / 60_000));
+  const when = minutes >= 60 ? `${Math.ceil(minutes / 60)} hora(s)` : `${minutes} minuto(s)`;
+  return `Muitas tentativas erradas. Por segurança, tente novamente em ${when}.`;
+}
+
+/** Cria ou troca o PIN (precisa estar logado — o cookie prova a identidade). */
+export async function setPin(db: Db, session: SessionParticipant | null, pin: string): Promise<void> {
+  const me = requireParticipant(session);
+  await db.participant.update({
+    where: { id: me.id },
+    data: { pinHash: await hashPin(pin), pinFailedAttempts: 0, pinLockedUntil: null },
+  });
+}
+
+/** Indica se o participante já tem PIN (para lembrar quem ainda não criou). */
+export async function hasPin(db: Db, session: SessionParticipant | null): Promise<boolean> {
+  if (!session) return false;
+  const p = await db.participant.findUnique({ where: { id: session.id }, select: { pinHash: true } });
+  return !!p?.pinHash;
 }

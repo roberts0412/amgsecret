@@ -2,6 +2,7 @@ import "server-only";
 import type { GroupStatus, ParticipantRole, ParticipantStatus } from "@/generated/prisma/enums";
 import { AppError } from "@/lib/errors";
 import { planFeatures } from "@/lib/plans";
+import { hashPin } from "@/lib/security/pin";
 import { generateGroupCode, generateToken, hashToken, normalizeGroupCode } from "@/lib/security/tokens";
 import { nameKey } from "@/lib/text";
 import type { CreateGroupInput, GroupDetailsInput } from "@/lib/validation";
@@ -17,6 +18,7 @@ export interface CreatedGroup {
 
 export async function createGroup(db: Db, input: CreateGroupInput): Promise<CreatedGroup> {
   const token = generateToken();
+  const pinHash = await hashPin(input.pin);
   for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt++) {
     const code = generateGroupCode();
     try {
@@ -39,6 +41,7 @@ export async function createGroup(db: Db, input: CreateGroupInput): Promise<Crea
             name: input.organizerName,
             nameKey: nameKey(input.organizerName),
             tokenHash: hashToken(token),
+            pinHash,
             role: "ORGANIZER",
             status: "CONFIRMED",
             confirmedAt: new Date(),

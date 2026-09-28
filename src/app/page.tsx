@@ -1,14 +1,32 @@
+import Link from "next/link";
+import { GoToGroupForm } from "@/components/forms";
+import { btn, Card, PageShell } from "@/components/ui";
+
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-4 py-10">
-      <header className="text-center">
-        <p className="text-5xl" aria-hidden>🎁</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight">Amigo Secreto</h1>
-        <p className="mt-2 text-slate-600">Sorteio simples, rápido e seguro. Cada um vê só o seu.</p>
-      </header>
-      <p className="rounded-xl bg-white p-4 text-center text-sm text-slate-500 shadow-sm">
-        Em construção — criar e entrar em grupos chegam na próxima etapa.
-      </p>
-    </main>
+    <PageShell>
+      <div className="py-6 text-center">
+        <p className="text-6xl" aria-hidden>🎁</p>
+        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">Amigo secreto online e grátis</h1>
+        <p className="mt-2 text-slate-600">
+          Crie o grupo, mande o link no WhatsApp e faça o sorteio. Cada pessoa vê só quem tirou.
+        </p>
+      </div>
+
+      <Link href="/criar" className={btn.primary}>
+        Criar amigo secreto
+      </Link>
+
+      <Card>
+        <GoToGroupForm />
+      </Card>
+
+      <ul className="mt-2 grid gap-2 text-sm text-slate-700">
+        <li>✅ Ninguém tira a si mesmo — sorteio garantido</li>
+        <li>🔒 Nem o organizador vê os pares</li>
+        <li>📝 Lista de desejos e mensagens anônimas</li>
+        <li>📱 Feito para o celular, sem cadastro</li>
+      </ul>
+    </PageShell>
   );
 }

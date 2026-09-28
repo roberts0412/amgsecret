@@ -14,7 +14,19 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // páginas de grupo: fora dos buscadores
+      { source: "/grupo/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // link privado: o token está na URL — nunca enviar como Referer nem indexar
+      {
+        source: "/acesso/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+    ];
   },
 };
 

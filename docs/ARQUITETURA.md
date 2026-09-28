@@ -104,26 +104,41 @@ removeExclusion, runDraw, redoDraw, addWish, sendSecretMessage, postToWall...).
 **Não existe** rota do tipo `/resultado?id=5`: o resultado é derivado apenas da
 sessão do participante.
 
-## 6. Autenticação e autorização
+## 6. Autenticação e autorização (implementado na Etapa 3)
 
 Sem cadastro/senha (atrito zero no WhatsApp):
 
-1. **Criar grupo** → servidor cria o Group + Participant organizador, gera token
-   aleatório de 256 bits, grava só o `sha256` e envia o token num cookie
-   `httpOnly; Secure; SameSite=Lax; Path=/grupo/<code>` + mostra um **link
-   privado de recuperação** (`/acesso/<token>`) para abrir em outro aparelho.
-2. **Entrar** (`/grupo/ABC123`) → informa nome → mesmo fluxo, cria participante
-   `INVITED`; ao confirmar vira `CONFIRMED`.
-3. Toda requisição: cookie → `sha256` → busca participante → confere
-   `groupId` e `status != REMOVED`. Organizador = `isOrganizer`.
-4. **Resultado**: `DrawPair` do sorteio ACTIVE onde `giverId = eu`. Refazer o
-   sorteio marca o anterior como `INVALIDATED` (e apaga seus pares); resultados
-   e mensagens antigas deixam de ser acessíveis.
-5. Sessão expira (cookie com validade) e o organizador pode regenerar o link
-   de um participante.
+1. **Criar grupo** → cria Group + organizador (`CONFIRMED`) numa transação, gera
+   token de 256 bits, grava só o `sha256` e guarda o token num cookie
+   `httpOnly; SameSite=Lax; Path=/` (em produção: `Secure` + prefixo `__Host-`),
+   um cookie por grupo (`__Host-as_<CÓDIGO>`), validade de ~6 meses.
+2. **Entrar** (`/grupo/ABC123`) → nome (+ apelido/e-mail/celular opcionais) →
+   participante `INVITED` → botão "Confirmar" → `CONFIRMED`.
+3. **Toda requisição**: cookie → `sha256` → participante; confere o código do
+   grupo e `status != REMOVED`. Papel e status são relidos do banco sempre.
+4. **Link privado** `/acesso/<token>`: o GET só mostra "Entrar como Fulano?";
+   o login é um POST (botão). Pré-visualizações do WhatsApp e links maliciosos
+   não logam ninguém. Resposta com `Referrer-Policy: no-referrer` e `noindex`.
+5. **Sair deste aparelho** apaga o cookie (o link privado continua valendo).
+6. **Remoção** pelo organizador (só antes do sorteio): troca o hash do token
+   (sessão cai na hora), libera o nome e apaga exclusões ligadas à pessoa.
+7. Trava de linha (`SELECT … FOR UPDATE`) no grupo em toda mudança estrutural:
+   entradas simultâneas nunca passam do limite do plano (testado com e sem a trava).
 
-**Visibilidade da lista de desejos**: antes do sorteio só o dono vê; depois,
-só o dono e quem o tirou (checado no servidor via `DrawPair`).
+**Server Actions** são endpoints públicos: identidade só do cookie, alvo (id)
+sempre conferido contra o grupo do usuário, retorno só com mensagem/erros de
+campo. CSRF: o Next compara `Origin` × `Host` (verificado em E2E com origem
+forjada) + cookies `SameSite=Lax`.
+
+**Rate limiting** (por IP, janela deslizante, em memória — trocar por Redis com
+várias instâncias): criar grupo 10/h, entrar 30/h, link privado 20/10min,
+busca de código 60/10min, ações 60–120/10min. `X-Forwarded-For` só é usado com
+`TRUST_PROXY=true`.
+
+**Pendente (decisão para a Etapa 4):** "regenerar link" de um participante que
+perdeu o celular. Se o organizador puder gerar um link novo, ele poderia entrar
+como a pessoa e ver o resultado dela — precisa de um desenho que não quebre o
+sigilo.
 
 ## 7. Segurança
 
@@ -172,8 +187,8 @@ só o dono e quem o tirou (checado no servidor via `DrawPair`).
 |---|---|---|
 | 1 | Núcleo: algoritmo do sorteio + tokens, com testes | ✅ |
 | 2 | Next.js + Prisma: schema, migrações, cliente, criptografia dos pares | ✅ |
-| 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | ⏳ |
-| 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | |
+| 3 | Criar grupo, entrar, confirmar, sessão por cookie, painel do organizador, rate limit | ✅ |
+| 4 | Exclusões, sortear, refazer (com confirmação), tela "meu amigo secreto" | ⏳ |
 | 5 | Lista de desejos, mensagens secretas, mural | |
 | 6 | Design mobile-first + botão "Compartilhar no WhatsApp" | |
 | 7 | SEO: landing pages, metadata, Open Graph, sitemap, robots | |

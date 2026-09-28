@@ -30,6 +30,7 @@ npm run dev            # http://localhost:3000
 npm test          # unitários (sorteio, tokens, cifragem, texto)
 npm run test:db   # integração com Postgres real (TEST_DATABASE_URL, nome terminando em _test)
 npm run test:all  # tudo
+npm run build && npm run test:e2e  # navegador real (Playwright), banco E2E_DATABASE_URL (_e2e)
 npm run typecheck
 npm run build
 ```

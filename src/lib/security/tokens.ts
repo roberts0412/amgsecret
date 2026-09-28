@@ -37,3 +37,11 @@ export function normalizeGroupCode(input: string): string | null {
   const code = input.trim().toUpperCase();
   return GROUP_CODE_PATTERN.test(code) ? code : null;
 }
+
+/** Formato exato de um token gerado por `generateToken()` (32 bytes). */
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
+/** Checagem barata antes de consultar o banco (evita hashing de lixo/gigante). */
+export function isWellFormedToken(token: unknown): token is string {
+  return typeof token === "string" && TOKEN_PATTERN.test(token);
+}

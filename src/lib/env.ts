@@ -13,6 +13,15 @@ const schema = z.object({
     .string()
     .min(43, "APP_SECRET precisa de pelo menos 32 bytes aleatórios (43 caracteres base64url)"),
   APP_URL: z.url().default("http://localhost:3000"),
+  /**
+   * "true" só quando o app roda atrás de um proxy confiável (Vercel, Nginx...)
+   * que define X-Forwarded-For/X-Real-IP. Sem proxy, esses cabeçalhos são
+   * forjáveis pelo cliente e não podem ser usados no rate limiting.
+   */
+  TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
 });
 
 export type Env = z.infer<typeof schema>;

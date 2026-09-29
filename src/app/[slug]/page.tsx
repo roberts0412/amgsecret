@@ -5,6 +5,7 @@ import { AdSlot } from "@/components/ad-slot";
 import { btn, Card, PageShell } from "@/components/ui";
 import { getEnv } from "@/lib/env";
 import { getSeoPage, HOW_IT_WORKS, jsonLdScript, SEO_PAGES } from "@/lib/seo-pages";
+import { SITE_NAME } from "@/lib/brand";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: page.title,
       description: page.description,
       url: `/${page.slug}`,
-      siteName: "Amigo Secreto",
+      siteName: SITE_NAME,
       locale: "pt_BR",
       type: "article",
     },

@@ -3,15 +3,16 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { adMode } from "@/lib/ads";
 import { getEnv } from "@/lib/env";
 import "./globals.css";
+import { SITE_NAME } from "@/lib/brand";
 
 /** metadataBase: URLs absolutas nas prévias (og:image precisa de URL completa). */
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL(getEnv().APP_URL),
-    title: { default: "Amigo Secreto Online Grátis", template: "%s · Amigo Secreto" },
+    title: { default: `${SITE_NAME} — sorteio online e grátis`, template: `%s · ${SITE_NAME}` },
     description: "Crie seu amigo secreto online, grátis, com sorteio seguro, lista de desejos e convite pelo WhatsApp.",
-    applicationName: "Amigo Secreto",
-    openGraph: { siteName: "Amigo Secreto", locale: "pt_BR", type: "website" },
+    applicationName: SITE_NAME,
+    openGraph: { siteName: SITE_NAME, locale: "pt_BR", type: "website" },
   };
 }
 

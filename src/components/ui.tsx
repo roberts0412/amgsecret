@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { SITE_NAME, SITE_TAGLINE } from "@/lib/brand";
 
 /** Componentes visuais simples (servidor). */
 
@@ -53,12 +54,12 @@ export function PageShell({ children }: { children: ReactNode }) {
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
       <header className="flex items-center justify-between py-4">
         <Link href="/" className="flex items-center gap-2 font-bold text-brand">
-          <span aria-hidden>🎁</span> Amigo Secreto
+          <span aria-hidden>🎁</span> {SITE_NAME}
         </Link>
       </header>
       <main className="flex flex-1 flex-col gap-4 pb-10">{children}</main>
       <footer className="flex flex-col items-center gap-2 py-6 text-center text-xs text-slate-500">
-        <p>Cada participante vê somente o próprio amigo secreto.</p>
+        <p>{SITE_TAGLINE}</p>
         <nav aria-label="Informações" className="flex gap-4">
           <Link href="/privacidade" className="underline">Privacidade</Link>
           <Link href="/termos" className="underline">Termos de uso</Link>

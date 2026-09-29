@@ -57,7 +57,7 @@ test("manifest e ícones para 'adicionar à tela inicial'", async ({ page }) => 
   const m = await page.request.get("/manifest.webmanifest");
   expect(m.status()).toBe(200);
   const json = await m.json();
-  expect(json).toMatchObject({ name: "Amigo Secreto", lang: "pt-BR", display: "standalone" });
+  expect(json).toMatchObject({ name: "Amigo Secreto Fácil", lang: "pt-BR", display: "standalone" });
   expect((await page.request.get("/icon.svg")).status()).toBe(200);
   expect((await page.request.get("/apple-icon")).headers()["content-type"]).toBe("image/png");
 });

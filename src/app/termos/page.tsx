@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal";
+import { SITE_NAME } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
-  description: "Regras de uso do Amigo Secreto: responsabilidades, conteúdo permitido e limitações do serviço.",
+  description: `Regras de uso do ${SITE_NAME}: responsabilidades, conteúdo permitido e limitações do serviço.`,
   alternates: { canonical: "/termos" },
 };
 
 export default function TermsPage() {
   return (
     <LegalPage title="Termos de Uso" updated="28/09/2026">
-      <p>Ao usar o Amigo Secreto, você concorda com estes termos. Eles são curtos — leia com calma.</p>
+      <p>Ao usar o {SITE_NAME}, você concorda com estes termos. Eles são curtos — leia com calma.</p>
 
       <h2>O serviço</h2>
       <p>

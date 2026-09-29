@@ -78,6 +78,7 @@ migrações do banco).
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
+| Painel mostra **"No Production Deployment"** | Projeto criado depois do último envio ao `main` | **Deployments** → **Create Deployment** → branch `main` → **Create** (ou qualquer novo commit no `main`) |
 | Build falha com `P1001` / "Can't reach database" | URL do Neon errada | Confira `DIRECT_DATABASE_URL` (sem `-pooler`) |
 | Build falha citando `APP_SECRET` ou `DATABASE_URL` | Variável faltando | Adicione em *Settings → Environment Variables* e clique em **Redeploy** |
 | `/api/health` mostra `{"ok":false}` | Site não alcança o banco | Confira `DATABASE_URL` (com `-pooler`) e redeploy |

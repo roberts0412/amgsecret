@@ -39,6 +39,10 @@ npm run build
 
 Passo a passo em **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)** — sem servidor, em ~15 minutos.
 
+## Publicar grátis com anúncios (Oracle Cloud)
+
+Passo a passo em **[docs/DEPLOY-ORACLE.md](docs/DEPLOY-ORACLE.md)** — servidor grátis para sempre; único custo é o domínio.
+
 ## Publicar (independente)
 
 Guia completo em **[docs/DEPLOY.md](docs/DEPLOY.md)**. Resumo, num servidor com Docker:

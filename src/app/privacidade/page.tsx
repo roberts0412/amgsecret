@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal";
 import { getEnv } from "@/lib/env";
+import { SITE_NAME } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade",
-  description: "Como o Amigo Secreto trata seus dados: o que coletamos, por quê, por quanto tempo e seus direitos (LGPD).",
+  description: `Como o ${SITE_NAME} trata seus dados: o que coletamos, por quê, por quanto tempo e seus direitos (LGPD).`,
   alternates: { canonical: "/privacidade" },
 };
 
@@ -13,7 +14,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage title="Política de Privacidade" updated="28/09/2026">
       <p>
-        Esta política explica como tratamos dados pessoais no Amigo Secreto, de acordo com a Lei Geral de Proteção de
+        Esta política explica como tratamos dados pessoais no {SITE_NAME}, de acordo com a Lei Geral de Proteção de
         Dados (LGPD — Lei 13.709/2018). Coletamos apenas o necessário para o sorteio funcionar.
       </p>
 

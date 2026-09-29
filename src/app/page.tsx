@@ -5,9 +5,10 @@ import { GoToGroupForm } from "@/components/forms";
 import { btn, Card, PageShell } from "@/components/ui";
 import { getEnv } from "@/lib/env";
 import { jsonLdScript, SEO_PAGES } from "@/lib/seo-pages";
+import { SITE_NAME } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: { absolute: "Amigo Secreto Online Grátis — sorteio pelo WhatsApp" },
+  title: { absolute: `${SITE_NAME} — sorteio online e grátis pelo WhatsApp` },
   description:
     "Crie seu amigo secreto online e grátis: convite pelo WhatsApp, sorteio seguro, lista de desejos e mensagens anônimas. Sem cadastro.",
   alternates: { canonical: "/" },
@@ -17,7 +18,7 @@ export default function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Amigo Secreto",
+    name: SITE_NAME,
     url: getEnv().APP_URL,
     applicationCategory: "LifestyleApplication",
     operatingSystem: "Web",
@@ -47,7 +48,6 @@ export default function HomePage() {
         <li>✅ Ninguém tira a si mesmo — sorteio garantido</li>
         <li>🔒 Nem o organizador vê os pares</li>
         <li>📝 Lista de desejos e mensagens anônimas</li>
-        <li>📱 Feito para o celular, sem cadastro</li>
       </ul>
 
       <nav aria-label="Guias" className="mt-4">

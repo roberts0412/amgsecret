@@ -15,6 +15,7 @@ import { getGroupView } from "@/lib/queries";
 import { hasPin } from "@/lib/services/participants";
 import { listWall } from "@/lib/services/social";
 import { groupUrl, inviteMessage, whatsappShareUrl } from "@/lib/share";
+import { SITE_NAME } from "@/lib/brand";
 
 type Props = { params: Promise<{ code: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `🎁 Amigo secreto: ${group.name}`,
       description: "Entre pelo link e confirme sua participação.",
-      siteName: "Amigo Secreto",
+      siteName: SITE_NAME,
       locale: "pt_BR",
       type: "website",
     },

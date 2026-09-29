@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { SITE_NAME } from "@/lib/brand";
 
 /**
  * Cartão de prévia (1200x630) para WhatsApp/redes. Sem emoji: o renderizador
@@ -46,7 +47,7 @@ export function ogCard({ title, lines, footer }: { title: string; lines: string[
         >
           <Gift size={260} />
           <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 16 }}>
-            <div style={{ fontSize: 30, color: "#e11d48" }}>Amigo secreto</div>
+            <div style={{ fontSize: 30, color: "#e11d48" }}>{SITE_NAME}</div>
             <div style={{ fontSize: shown.length > 28 ? 56 : 72, color: "#0f172a", lineHeight: 1.1 }}>{shown}</div>
             {lines.map((l) => (
               <div key={l} style={{ fontSize: 34, color: "#334155" }}>

@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
+import { SITE_NAME } from "@/lib/brand";
 
 /** Permite "Adicionar à tela inicial" no celular. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Amigo Secreto",
-    short_name: "Amigo Secreto",
+    name: SITE_NAME,
+    short_name: "Amigo Secreto", // curto: cabe embaixo do ícone no celular
     description: "Sorteio de amigo secreto online, grátis e seguro.",
     start_url: "/",
     display: "standalone",

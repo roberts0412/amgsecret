@@ -5,7 +5,8 @@ Site na **Vercel** (plano Hobby, grátis) e banco PostgreSQL no **Neon**
 
 > ⚠️ O plano Hobby da Vercel é para **uso pessoal/não comercial**. Para ligar
 > anúncios (AdSense) ou links de afiliado (`AMAZON_ASSOCIATE_TAG`), assine o plano Pro ou migre para o servidor próprio
-> (`docs/DEPLOY.md` — pode ser o Oracle Cloud Always Free). Confira os termos
+> (`docs/DEPLOY.md` — pode ser o Oracle Cloud Always Free), ou use a Netlify
+> (`docs/DEPLOY-NETLIFY.md`), cujo plano grátis permite. Confira os termos
 > atuais de cada serviço.
 
 ## 0. No GitHub: branch principal = `main`

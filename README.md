@@ -39,6 +39,10 @@ npm run build
 
 Passo a passo em **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)** — sem servidor, em ~15 minutos.
 
+## Publicar grátis com anúncios (Netlify + Neon)
+
+Passo a passo em **[docs/DEPLOY-NETLIFY.md](docs/DEPLOY-NETLIFY.md)** — plano grátis que permite anúncios e afiliados, sem cartão (limite mensal de créditos).
+
 ## Publicar grátis com anúncios (Oracle Cloud)
 
 Passo a passo em **[docs/DEPLOY-ORACLE.md](docs/DEPLOY-ORACLE.md)** — servidor grátis para sempre; único custo é o domínio.

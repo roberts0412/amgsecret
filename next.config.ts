@@ -5,10 +5,14 @@ import type { NextConfig } from "next";
  * momento do build. Se o build de produção usar localhost, o sitemap e as URLs
  * canônicas sairão erradas — avisamos alto aqui.
  */
-// mesma regra de src/lib/env.ts (resolveAppUrl): APP_URL ou a URL da Vercel
+// mesma regra de src/lib/env.ts (resolveAppUrl): APP_URL ou a URL da Vercel/Netlify
 const appUrl =
   process.env.APP_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.NETLIFY === "true" && process.env.URL?.startsWith("https://")
+      ? process.env.URL
+      : "");
 
 if (process.argv.includes("build") && process.env.NODE_ENV !== "test") {
   if (!appUrl || /localhost|127\.0\.0\.1/.test(appUrl)) {

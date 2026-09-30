@@ -20,7 +20,7 @@ async function fillPin(page: Page, pin = PIN) {
 
 async function createGroup(page: Page, name = "Natal da Família") {
   await page.goto("/");
-  await page.getByRole("link", { name: "Criar amigo secreto" }).click();
+  await page.getByRole("link", { name: "Criar grupo e sortear" }).click();
   await page.getByLabel("Nome do amigo secreto").fill(name);
   await page.getByLabel("Horário").fill("20:00");
   await page.getByLabel("Local").fill("Casa da vó");

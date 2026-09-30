@@ -17,7 +17,7 @@ import { todayInEventTz } from "@/lib/validation";
 
 type Props = { params: Promise<{ code: string }> };
 
-export const metadata: Metadata = { title: "Meu amigo secreto", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Quem eu tirei", robots: { index: false, follow: false } };
 
 /**
  * Quem EU tirei: nome, lista de desejos e conversa anônima. Abrir esta

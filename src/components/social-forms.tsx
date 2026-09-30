@@ -103,11 +103,11 @@ export function SendToFriendForm({ code }: { code: string }) {
   );
 }
 
-export function ReplyToSantaForm({ code }: { code: string }) {
+export function ReplyToSantaForm({ code, term }: { code: string; term: string }) {
   const [state, action] = useActionState(replyToSantaAction, initialActionState);
   return (
     <MessageBox code={code} action={action} state={state} maxLength={1000} submit="Responder"
-      label="Responder ao seu amigo secreto" placeholder="Ele(a) vai receber, mas você continua sem saber quem é 🙂" />
+      label={`Responder ao seu ${term}`} placeholder="Ele(a) vai receber, mas você continua sem saber quem é 🙂" />
   );
 }
 

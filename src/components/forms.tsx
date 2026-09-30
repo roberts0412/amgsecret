@@ -13,20 +13,59 @@ import {
   updateGroupAction,
 } from "@/actions/groups";
 import { initialActionState } from "@/lib/action-state";
+import { DEFAULT_GAME_KIND, GAME_KINDS, gameTerm } from "@/lib/game-kinds";
 import { Field, FormMessage, SubmitButton } from "./form-kit";
 import { btn } from "./ui";
+
+type DetailsDefaults = Partial<
+  Record<"name" | "description" | "eventDate" | "eventTime" | "location" | "giftValue" | "gameKind", string>
+>;
+
+/** Qual brincadeira: muda só o nome usado no grupo (o sorteio é o mesmo). */
+function GameKindPicker({ value, onChange }: { value: string; onChange: (kind: string) => void }) {
+  return (
+    <fieldset>
+      <legend className="text-sm font-medium text-slate-800">Qual é a brincadeira?</legend>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {GAME_KINDS.map((k) => (
+          <label
+            key={k.id}
+            title={k.hint}
+            className="inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-full bg-white px-3 text-sm ring-1 ring-slate-300 has-[:checked]:bg-brand has-[:checked]:text-white has-[:checked]:ring-brand has-[:focus-visible]:ring-2"
+          >
+            <input
+              type="radio"
+              name="gameKind"
+              value={k.id}
+              checked={value === k.id}
+              onChange={() => onChange(k.id)}
+              className="sr-only"
+            />
+            <span aria-hidden>{k.emoji}</span> {k.term.charAt(0).toUpperCase() + k.term.slice(1)}
+          </label>
+        ))}
+      </div>
+      <p className="mt-1 text-xs text-slate-500">Muda só o nome usado no grupo. O sorteio funciona igual.</p>
+    </fieldset>
+  );
+}
 
 /** Campos de detalhes do evento, usados em "criar" e "editar". */
 function GroupDetailsFields({
   state,
   defaults,
+  kind,
+  onKindChange,
 }: {
   state: typeof initialActionState;
-  defaults?: Partial<Record<"name" | "description" | "eventDate" | "eventTime" | "location" | "giftValue", string>>;
+  defaults?: DetailsDefaults;
+  kind: string;
+  onKindChange: (kind: string) => void;
 }) {
   return (
     <>
-      <Field name="name" label="Nome do amigo secreto" state={state} required minLength={3} maxLength={80}
+      <GameKindPicker value={kind} onChange={onKindChange} />
+      <Field name="name" label={`Nome do ${gameTerm(kind)}`} state={state} required minLength={3} maxLength={80}
         placeholder="Ex.: Natal da Família" defaultValue={defaults?.name} autoComplete="off" />
       <div className="grid grid-cols-2 gap-3">
         <Field name="eventDate" label="Data" type="date" state={state} optional defaultValue={defaults?.eventDate} />
@@ -67,15 +106,16 @@ function PinFields({ state, label = "Crie um PIN de 6 números" }: { state: type
 
 export function CreateGroupForm() {
   const [state, action] = useActionState(createGroupAction, initialActionState);
+  const [kind, setKind] = useState<string>(DEFAULT_GAME_KIND);
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
       <FormMessage state={state} />
-      <GroupDetailsFields state={state} />
+      <GroupDetailsFields state={state} kind={kind} onKindChange={setKind} />
       <Field name="organizerName" label="Seu nome" state={state} required minLength={2} maxLength={60}
         placeholder="Como o grupo te conhece" autoComplete="given-name"
         hint="Você também participa do sorteio." />
       <PinFields state={state} />
-      <SubmitButton pendingText="Criando…">Criar amigo secreto</SubmitButton>
+      <SubmitButton pendingText="Criando…">{`Criar ${gameTerm(kind)}`}</SubmitButton>
     </form>
   );
 }
@@ -85,14 +125,15 @@ export function EditGroupForm({
   defaults,
 }: {
   code: string;
-  defaults: Partial<Record<"name" | "description" | "eventDate" | "eventTime" | "location" | "giftValue", string>>;
+  defaults: DetailsDefaults;
 }) {
   const [state, action] = useActionState(updateGroupAction, initialActionState);
+  const [kind, setKind] = useState<string>(defaults.gameKind ?? DEFAULT_GAME_KIND);
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="code" value={code} />
       <FormMessage state={state} />
-      <GroupDetailsFields state={state} defaults={defaults} />
+      <GroupDetailsFields state={state} defaults={defaults} kind={kind} onKindChange={setKind} />
       <SubmitButton variant="secondary" pendingText="Salvando…">Salvar alterações</SubmitButton>
     </form>
   );

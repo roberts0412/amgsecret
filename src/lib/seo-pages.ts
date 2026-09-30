@@ -25,6 +25,8 @@ export interface SeoPage {
   intro: string;
   sections: SeoSection[];
   faq: SeoFaq[];
+  /** Texto do botão principal (padrão: "Criar amigo secreto grátis"). */
+  cta?: string;
 }
 
 /** Passo a passo comum, exibido em todas as páginas. */
@@ -232,6 +234,144 @@ export const SEO_PAGES: readonly SeoPage[] = [
       { q: "A lista é obrigatória?", a: "Não. É opcional; quem não quiser pode deixar em branco." },
       { q: "Posso mudar a lista depois do sorteio?", a: "Sim. Você pode adicionar ou remover desejos a qualquer momento." },
       { q: "Posso colocar links de lojas?", a: "Sim. Os links aparecem com o nome do site, para quem te tirou saber para onde está indo." },
+    ],
+  },
+  {
+    slug: "amigo-oculto-online",
+    keyword: "amigo oculto online",
+    title: "Amigo Oculto Online: sorteio grátis pelo WhatsApp",
+    description:
+      "Organize seu amigo oculto online e grátis: convite pelo WhatsApp, sorteio sem erro e cada pessoa vê só quem tirou. Sem cadastro e sem papelzinho.",
+    h1: "Amigo oculto online, grátis e pelo celular",
+    intro:
+      "Amigo oculto, amigo secreto: o nome muda de região para região, a brincadeira é a mesma. Aqui o grupo é criado com o nome de amigo oculto, e o sorteio acontece pelo celular, sem precisar juntar todo mundo.",
+    cta: "Criar amigo oculto grátis",
+    sections: [
+      {
+        heading: "Do jeito que a sua família chama",
+        paragraphs: [
+          "Em Minas Gerais, no Rio de Janeiro e em muitos outros lugares, a troca de presentes de fim de ano é o amigo oculto. Ao criar o grupo, escolha \"Amigo oculto\": o convite, os avisos e a área de cada participante passam a usar esse nome.",
+        ],
+      },
+      {
+        heading: "Sorteio justo e secreto",
+        paragraphs: [
+          "Ninguém tira o próprio nome, cada pessoa tira exatamente uma outra e todo mundo é tirado uma vez. Nem o organizador consegue ver quem tirou quem.",
+          "Se houver casais ou irmãos que não devem se tirar, é só marcar a regra antes do sorteio.",
+        ],
+      },
+      {
+        heading: "Tudo o que o amigo oculto precisa",
+        paragraphs: ["Depois do sorteio, o grupo continua ajudando até o dia da troca:"],
+        bullets: [
+          "Lista de desejos opcional, vista só por quem te tirou",
+          "Mensagens anônimas para tirar dúvidas sobre o presente",
+          "Mural do grupo para combinar data, local e valor",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Amigo oculto e amigo secreto são a mesma coisa?", a: "Sim. São nomes diferentes para a mesma brincadeira de sortear quem presenteia quem. Aqui você escolhe o nome que o seu grupo usa." },
+      { q: "Precisa instalar aplicativo?", a: "Não. Funciona no navegador do celular ou do computador, pelo link que você manda no WhatsApp." },
+      { q: "É grátis mesmo?", a: "Sim. Criar o grupo, convidar, sortear e usar a lista de desejos não custa nada." },
+    ],
+  },
+  {
+    slug: "sorteio-amigo-oculto",
+    keyword: "sorteio de amigo oculto",
+    title: "Sorteio de Amigo Oculto online, rápido e sem erro",
+    description:
+      "Faça o sorteio de amigo oculto pelo celular: ninguém tira a si mesmo, regras para casais e resultado individual. Grátis, com convite pelo WhatsApp.",
+    h1: "Sorteio de amigo oculto sem papelzinho",
+    intro:
+      "Sortear amigo oculto no papel dá trabalho: alguém sempre tira o próprio nome e é preciso refazer tudo. Com o sorteio online, as regras são garantidas pelo sistema e cada pessoa descobre só quem tirou.",
+    cta: "Fazer sorteio de amigo oculto",
+    sections: [
+      {
+        heading: "Regras garantidas",
+        paragraphs: ["O sorteio só é salvo se todas as regras forem cumpridas:"],
+        bullets: [
+          "Ninguém tira a si mesmo",
+          "Cada pessoa tira exatamente um amigo oculto",
+          "Cada pessoa é tirada uma única vez",
+          "Exclusões respeitadas (ex.: casais não se tiram)",
+        ],
+      },
+      {
+        heading: "Resultado só para quem precisa saber",
+        paragraphs: [
+          "Cada participante vê o resultado na própria área, protegida por link privado e PIN. O organizador acompanha quem já viu o resultado, mas nunca quem tirou quem.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "E se alguém não puder se tirar com o marido ou a esposa?", a: "Antes do sorteio, o organizador marca exclusões, como \"casais não se tiram\". O sistema só sorteia uma combinação que respeite todas elas." },
+      { q: "Dá para refazer o sorteio?", a: "Sim. O organizador pode refazer, mas o site avisa antes, porque algumas pessoas podem já ter visto o resultado." },
+      { q: "Quantas pessoas podem participar?", a: "A partir de 3 pessoas. A versão grátis aceita até 50 participantes por grupo." },
+    ],
+  },
+  {
+    slug: "amigo-da-onca",
+    keyword: "amigo da onça",
+    title: "Amigo da Onça: sorteio online grátis para a brincadeira",
+    description:
+      "Organize o amigo da onça com sorteio online: convite pelo WhatsApp, cada um vê só quem tirou e mural para combinar as regras. Grátis e sem cadastro.",
+    h1: "Amigo da onça com sorteio online",
+    intro:
+      "No amigo da onça, o presente vale pela risada: lembrancinhas engraçadas, pegadinhas e presentes inesperados. O sorteio continua sendo a parte séria, e é essa que o site resolve.",
+    cta: "Criar amigo da onça grátis",
+    sections: [
+      {
+        heading: "Como funciona o amigo da onça",
+        paragraphs: [
+          "Cada grupo tem as próprias regras: presentes engraçados, algo usado ou um item bem inesperado. Em muitos grupos, o valor é baixo e a criatividade conta mais do que o preço.",
+          "Use o recado do grupo e o mural para deixar as regras combinadas antes da festa.",
+        ],
+      },
+      {
+        heading: "Sorteio secreto de verdade",
+        paragraphs: [
+          "Ao criar o grupo, escolha \"Amigo da onça\": o convite e os avisos usam esse nome. Cada pessoa descobre só quem tirou, e ninguém, nem o organizador, vê a lista completa.",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Qual a diferença entre amigo da onça e amigo secreto?", a: "O sorteio é igual. A diferença está no presente: no amigo da onça, a graça é presentear com algo engraçado ou inesperado." },
+      { q: "Dá para definir um valor máximo?", a: "Sim. Ao criar o grupo, informe o valor do presente. Ele aparece no convite e na página do grupo." },
+      { q: "Posso mandar dicas para quem eu tirei?", a: "Sim, pelas mensagens anônimas: a pessoa recebe a mensagem sem saber quem mandou." },
+    ],
+  },
+  {
+    slug: "amigo-chocolate",
+    keyword: "amigo chocolate",
+    title: "Amigo Chocolate: sorteio online grátis pelo WhatsApp",
+    description:
+      "Faça o sorteio do amigo chocolate online: convite pelo WhatsApp, lista de chocolates preferidos e mensagens anônimas. Grátis e sem cadastro.",
+    h1: "Amigo chocolate com sorteio pelo celular",
+    intro:
+      "O amigo chocolate é o jeito mais doce de brincar: em vez de presentes, a troca é de chocolates. É comum na Páscoa, na escola e no trabalho, e o sorteio pode ser feito pelo celular em um minuto.",
+    cta: "Criar amigo chocolate grátis",
+    sections: [
+      {
+        heading: "Perfeito para Páscoa, escola e firma",
+        paragraphs: [
+          "Crie o grupo escolhendo \"Amigo chocolate\", defina o valor e mande o link no grupo do WhatsApp da turma. Cada um entra com o nome e confirma a participação.",
+        ],
+      },
+      {
+        heading: "Acerte no chocolate",
+        paragraphs: ["Depois do sorteio, cada participante pode:"],
+        bullets: [
+          "Montar uma lista com os chocolates preferidos",
+          "Avisar sobre alergias ou restrições",
+          "Receber perguntas anônimas de quem o tirou",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Como funciona o amigo chocolate?", a: "É um amigo secreto em que o presente é chocolate. O sorteio define quem presenteia quem, e cada pessoa vê só o próprio resultado." },
+      { q: "Dá para fazer com a turma da escola?", a: "Sim. É só mandar o link do grupo para a turma. Não precisa de e-mail nem de aplicativo." },
+      { q: "Quem tem alergia pode avisar?", a: "Sim. Use a lista de desejos para dizer o que pode e o que não pode, e só quem te tirou vê." },
     ],
   },
 ];

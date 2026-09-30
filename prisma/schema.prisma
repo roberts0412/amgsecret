@@ -62,6 +62,8 @@ model Group {
   status         GroupStatus @default(OPEN)
   plan           Plan        @default(FREE)
   theme          String      @default("classico") @db.VarChar(30)
+  /// Nome da brincadeira: secreto, oculto, onca... (src/lib/game-kinds.ts)
+  gameKind       String      @default("secreto") @db.VarChar(20)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

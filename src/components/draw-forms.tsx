@@ -146,7 +146,7 @@ export function ReopenGroupButton({ code }: { code: string }) {
  * Revela o amigo secreto sob demanda. O nome NÃO está no HTML da página:
  * só chega ao navegador quando a pessoa toca em "Revelar".
  */
-export function RevealFriend({ code, alreadyViewed }: { code: string; alreadyViewed: boolean }) {
+export function RevealFriend({ code, alreadyViewed, term }: { code: string; alreadyViewed: boolean; term: string }) {
   const [state, action] = useActionState<RevealState, FormData>(revealAction, { ok: false });
   const [hidden, setHidden] = useState(false);
 
@@ -173,7 +173,7 @@ export function RevealFriend({ code, alreadyViewed }: { code: string; alreadyVie
         {alreadyViewed ? "Toque para ver de novo quem você tirou." : "Confira se ninguém está olhando a sua tela…"}
       </p>
       {state.message && <p className="text-sm text-red-700" role="alert">{state.message}</p>}
-      <SubmitButton pendingText="Revelando…">Revelar meu amigo secreto</SubmitButton>
+      <SubmitButton pendingText="Revelando…">{`Revelar meu ${term}`}</SubmitButton>
     </form>
   );
 }

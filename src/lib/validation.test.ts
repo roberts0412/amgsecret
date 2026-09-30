@@ -50,7 +50,15 @@ describe("createGroupSchema", () => {
 
   it("aceita o mínimo e transforma vazios em undefined", () => {
     const r = parseInput(createGroupSchema(now), { ...base, description: "  ", eventDate: "", giftValue: "" });
-    expect(r).toEqual({ name: "Natal da Família", organizerName: "Robert", pin: "482915", pinConfirm: "482915" });
+    expect(r).toEqual({
+      name: "Natal da Família", organizerName: "Robert", pin: "482915", pinConfirm: "482915", gameKind: "secreto",
+    });
+  });
+
+  it("nome da brincadeira: aceita os conhecidos, recusa o resto", () => {
+    expect(parseInput(createGroupSchema(now), { ...base, gameKind: "oculto" }).gameKind).toBe("oculto");
+    expect(parseInput(createGroupSchema(now), { ...base, gameKind: "onca" }).gameKind).toBe("onca");
+    expect(errorsOf({ ...base, gameKind: "<b>x</b>" }).gameKind).toMatch(/brincadeira/);
   });
 
   it("limpa textos e converte valor", () => {

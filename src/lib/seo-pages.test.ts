@@ -4,12 +4,16 @@ import { getSeoPage, jsonLdScript, SEO_PAGES } from "./seo-pages";
 const norm = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 describe("páginas de SEO", () => {
-  it("cobre as 5 intenções de busca pedidas", () => {
+  it("cobre as intenções de busca pedidas (amigo secreto, oculto, da onça, chocolate)", () => {
     expect(SEO_PAGES.map((p) => p.slug).sort()).toEqual([
+      "amigo-chocolate",
+      "amigo-da-onca",
+      "amigo-oculto-online",
       "amigo-secreto-com-lista-de-desejos",
       "amigo-secreto-gratis",
       "amigo-secreto-online",
       "sorteador-amigo-secreto",
+      "sorteio-amigo-oculto",
       "sorteio-amigo-secreto",
     ]);
   });

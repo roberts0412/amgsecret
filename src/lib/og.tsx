@@ -29,7 +29,12 @@ function Gift({ size }: { size: number }) {
   );
 }
 
-export function ogCard({ title, lines, footer }: { title: string; lines: string[]; footer: string }) {
+/** `label`: linha pequena acima do título (padrão: nome do site). */
+export function ogCard({
+  title, lines, footer, label = SITE_NAME,
+}: {
+  title: string; lines: string[]; footer: string; label?: string;
+}) {
   const shown = title.length > 60 ? `${title.slice(0, 57)}…` : title;
   return new ImageResponse(
     (
@@ -47,7 +52,7 @@ export function ogCard({ title, lines, footer }: { title: string; lines: string[
         >
           <Gift size={260} />
           <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 16 }}>
-            <div style={{ fontSize: 30, color: "#e11d48" }}>{SITE_NAME}</div>
+            <div style={{ fontSize: 30, color: "#e11d48" }}>{label}</div>
             <div style={{ fontSize: shown.length > 28 ? 56 : 72, color: "#0f172a", lineHeight: 1.1 }}>{shown}</div>
             {lines.map((l) => (
               <div key={l} style={{ fontSize: 34, color: "#334155" }}>

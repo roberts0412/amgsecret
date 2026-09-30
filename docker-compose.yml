@@ -49,6 +49,7 @@ services:
       ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
       ADSENSE_SLOT_ID: ${ADSENSE_SLOT_ID:-}
       CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+      AMAZON_ASSOCIATE_TAG: ${AMAZON_ASSOCIATE_TAG:-}
       # atrás do Caddy (proxy confiável): usa o IP real do visitante no rate limit
       TRUST_PROXY: "true"
       # processos do site (padrão: 1 por núcleo, até 8)

@@ -50,7 +50,24 @@ describe("createGroupSchema", () => {
 
   it("aceita o mínimo e transforma vazios em undefined", () => {
     const r = parseInput(createGroupSchema(now), { ...base, description: "  ", eventDate: "", giftValue: "" });
-    expect(r).toEqual({ name: "Natal da Família", organizerName: "Robert", pin: "482915", pinConfirm: "482915" });
+    expect(r).toEqual({
+      name: "Natal da Família", organizerName: "Robert", pin: "482915", pinConfirm: "482915", gameKind: "secreto",
+    });
+  });
+
+  it("nome da brincadeira: aceita os conhecidos, recusa o resto", () => {
+    expect(parseInput(createGroupSchema(now), { ...base, gameKind: "oculto" }).gameKind).toBe("oculto");
+    expect(parseInput(createGroupSchema(now), { ...base, gameKind: "onca" }).gameKind).toBe("onca");
+    expect(errorsOf({ ...base, gameKind: "<b>x</b>" }).gameKind).toMatch(/brincadeira/);
+  });
+
+  it("brincadeira \"outro\": exige o nome escrito, só com letras", () => {
+    const ok = parseInput(createGroupSchema(now), { ...base, gameKind: "outro", gameName: "  Amigo   doce " });
+    expect(ok).toMatchObject({ gameKind: "outro", gameName: "Amigo doce" });
+    expect(errorsOf({ ...base, gameKind: "outro" }).gameName).toMatch(/Escreva o nome/);
+    expect(errorsOf({ ...base, gameKind: "outro", gameName: "<script>" }).gameName).toMatch(/só letras/);
+    expect(errorsOf({ ...base, gameKind: "outro", gameName: "ab" }).gameName).toMatch(/pelo menos 3/);
+    expect(errorsOf({ ...base, gameKind: "outro", gameName: "a".repeat(31) }).gameName).toMatch(/no máximo 30/);
   });
 
   it("limpa textos e converte valor", () => {

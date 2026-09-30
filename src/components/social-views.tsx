@@ -1,4 +1,5 @@
 import type { MessageView, WallPostView, WishView } from "@/lib/services/social";
+import { affiliateLink } from "@/lib/affiliate";
 import { formatCents } from "@/lib/format";
 import { DeleteWallPostButton, DeleteWishButton } from "./social-forms";
 
@@ -20,32 +21,39 @@ function hostOf(url: string): string {
   }
 }
 
-export function WishList({ wishes, code, editable }: { wishes: WishView[]; code: string; editable: boolean }) {
+export function WishList({
+  wishes, code, editable, affiliateTag,
+}: {
+  wishes: WishView[]; code: string; editable: boolean; affiliateTag?: string;
+}) {
   return (
     <ul className="flex flex-col gap-2">
-      {wishes.map((w) => (
-        <li key={w.id} className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="font-semibold break-words">{w.product}</p>
-              {w.approxPriceCents !== null && <p className="text-sm text-slate-600">≈ {formatCents(w.approxPriceCents)}</p>}
+      {wishes.map((w) => {
+        const link = w.url ? affiliateLink(w.url, affiliateTag) : null;
+        return (
+          <li key={w.id} className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold break-words">{w.product}</p>
+                {w.approxPriceCents !== null && <p className="text-sm text-slate-600">≈ {formatCents(w.approxPriceCents)}</p>}
+              </div>
+              {editable && <DeleteWishButton code={code} wishId={w.id} />}
             </div>
-            {editable && <DeleteWishButton code={code} wishId={w.id} />}
-          </div>
-          {w.description && <p className="mt-1 whitespace-pre-line text-sm text-slate-700 break-words">{w.description}</p>}
-          {w.note && <p className="mt-1 whitespace-pre-line text-sm text-slate-500 break-words">📝 {w.note}</p>}
-          {w.url && (
-            <a
-              href={w.url}
-              target="_blank"
-              rel="noopener noreferrer nofollow ugc"
-              className="mt-2 inline-block text-sm font-medium text-brand underline"
-            >
-              Ver produto em {hostOf(w.url)} ↗
-            </a>
-          )}
-        </li>
-      ))}
+            {w.description && <p className="mt-1 whitespace-pre-line text-sm text-slate-700 break-words">{w.description}</p>}
+            {w.note && <p className="mt-1 whitespace-pre-line text-sm text-slate-500 break-words">📝 {w.note}</p>}
+            {w.url && link && (
+              <a
+                href={link.href}
+                target="_blank"
+                rel={link.affiliate ? "sponsored noopener noreferrer nofollow" : "noopener noreferrer nofollow ugc"}
+                className="mt-2 inline-block text-sm font-medium text-brand underline"
+              >
+                Ver produto em {hostOf(w.url)} ↗
+              </a>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

@@ -10,13 +10,15 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Termos de Uso" updated="28/09/2026">
+    <LegalPage title="Termos de Uso" updated="30/09/2026">
       <p>Ao usar o {SITE_NAME}, você concorda com estes termos. Eles são curtos — leia com calma.</p>
 
       <h2>O serviço</h2>
       <p>
         Oferecemos uma ferramenta gratuita para organizar amigos secretos: criação de grupos, convites, sorteio,
-        lista de desejos, mensagens anônimas e mural. O serviço pode exibir anúncios.
+        lista de desejos, mensagens anônimas e mural. O serviço pode exibir anúncios e
+        links de afiliado (por exemplo, da Amazon): se você comprar por eles, o site pode receber uma comissão, sem
+        custo extra para você.
       </p>
 
       <h2>Seu link privado e seu PIN</h2>

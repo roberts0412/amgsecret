@@ -162,18 +162,18 @@ export default async function AdminPage({ params }: Props) {
             <div className="flex flex-col gap-2">
               {notViewedNames.length > 0 && (
                 <ExternalLink
-                  href={whatsappShareUrl(notViewedReminderMessage(group.name, notViewedNames, publicUrl))}
+                  href={whatsappShareUrl(notViewedReminderMessage(group.name, notViewedNames, publicUrl, group))}
                   className={btn.whatsapp}
                 >
                   Cobrar quem ainda não viu ({notViewedNames.length})
                 </ExternalLink>
               )}
-              <ExternalLink href={whatsappShareUrl(drawDoneMessage(group.name, publicUrl))} className={notViewedNames.length > 0 ? btn.secondary : btn.whatsapp}>
+              <ExternalLink href={whatsappShareUrl(drawDoneMessage(group.name, publicUrl, group))} className={notViewedNames.length > 0 ? btn.secondary : btn.whatsapp}>
                 Avisar que o sorteio foi feito
               </ExternalLink>
             </div>
           ) : (
-            <ExternalLink href={whatsappShareUrl(reminderMessage(group.name, pendingNames, publicUrl))} className={btn.whatsapp}>
+            <ExternalLink href={whatsappShareUrl(reminderMessage(group.name, pendingNames, publicUrl, group))} className={btn.whatsapp}>
               Cobrar quem não confirmou ({pendingNames.length})
             </ExternalLink>
           )}
@@ -227,6 +227,8 @@ export default async function AdminPage({ params }: Props) {
             eventTime: group.eventTime ?? undefined,
             location: group.location ?? undefined,
             giftValue: centsToInput(group.giftValueCents),
+            gameKind: group.gameKind,
+            gameName: group.gameName ?? undefined,
           }}
         />
       </Card>

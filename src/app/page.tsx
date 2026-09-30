@@ -6,11 +6,12 @@ import { btn, Card, PageShell } from "@/components/ui";
 import { getEnv } from "@/lib/env";
 import { jsonLdScript, SEO_PAGES } from "@/lib/seo-pages";
 import { SITE_NAME } from "@/lib/brand";
+import { NAMED_GAME_KINDS, gameTitle } from "@/lib/game-kinds";
 
 export const metadata: Metadata = {
-  title: { absolute: `${SITE_NAME} — sorteio online e grátis pelo WhatsApp` },
+  title: { absolute: `${SITE_NAME}: amigo secreto e amigo oculto online e grátis` },
   description:
-    "Crie seu amigo secreto online e grátis: convite pelo WhatsApp, sorteio seguro, lista de desejos e mensagens anônimas. Sem cadastro.",
+    "Sorteio online e grátis de amigo secreto, amigo oculto, amigo da onça e amigo chocolate: convite pelo WhatsApp, lista de desejos e mensagens anônimas.",
   alternates: { canonical: "/" },
 };
 
@@ -19,6 +20,7 @@ export default function HomePage() {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: SITE_NAME,
+    alternateName: ["Amigo oculto online", "Sorteio de amigo secreto", "Amigo da onça online"],
     url: getEnv().APP_URL,
     applicationCategory: "LifestyleApplication",
     operatingSystem: "Web",
@@ -30,14 +32,21 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
       <div className="py-6 text-center">
         <p className="text-6xl" aria-hidden>🎁</p>
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">Amigo secreto online e grátis</h1>
+        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">Amigo secreto e amigo oculto online e grátis</h1>
         <p className="mt-2 text-slate-600">
           Crie o grupo, mande o link no WhatsApp e faça o sorteio. Cada pessoa vê só quem tirou.
         </p>
+        <ul aria-label="Serve para" className="mt-4 flex flex-wrap justify-center gap-2">
+          {NAMED_GAME_KINDS.map((k) => (
+            <li key={k.id} className="rounded-full bg-white px-3 py-1 text-sm text-slate-700 ring-1 ring-slate-200">
+              <span aria-hidden>{k.emoji}</span> {gameTitle({ gameKind: k.id })}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <Link href="/criar" className={btn.primary}>
-        Criar amigo secreto
+        Criar grupo e sortear
       </Link>
 
       <Card>

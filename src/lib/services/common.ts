@@ -11,7 +11,7 @@ export interface SessionParticipant {
   name: string;
   role: ParticipantRole;
   status: ParticipantStatus;
-  group: { id: string; code: string; name: string; status: GroupStatus; plan: Plan };
+  group: { id: string; code: string; name: string; status: GroupStatus; plan: Plan; gameKind: string; gameName: string | null };
 }
 
 export function isUniqueViolation(e: unknown): boolean {

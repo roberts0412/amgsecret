@@ -5,6 +5,7 @@ import { logoutAction } from "@/actions/groups";
 import { RevealFriend } from "@/components/draw-forms";
 import { CopyButton, SetPinForm } from "@/components/forms";
 import { AddWishForm, ReplyToSantaForm } from "@/components/social-forms";
+import { gameTerm } from "@/lib/game-kinds";
 import { Conversation, WishList } from "@/components/social-views";
 import { Alert, btn, Card, CardTitle, ExternalLink, PageShell } from "@/components/ui";
 import { getSession, getSessionToken } from "@/lib/auth/session";
@@ -46,6 +47,7 @@ export default async function MyAreaPage({ params, searchParams }: Props) {
   ]);
   const privateUrl = token ? new URL(`/acesso/${token}`, getEnv().APP_URL).toString() : null;
   const today = todayInEventTz();
+  const term = gameTerm(me.group);
 
   return (
     <PageShell>
@@ -60,7 +62,7 @@ export default async function MyAreaPage({ params, searchParams }: Props) {
       )}
 
       <Card>
-        <CardTitle>🎁 Meu amigo secreto</CardTitle>
+        <CardTitle>{`🎁 Meu ${term}`}</CardTitle>
         {result.state === "NOT_DRAWN" && (
           <p className="text-slate-700">⏳ O sorteio ainda não foi feito. Volte aqui depois que o organizador sortear!</p>
         )}
@@ -71,7 +73,7 @@ export default async function MyAreaPage({ params, searchParams }: Props) {
         )}
         {result.state === "READY" && (
           <>
-            <RevealFriend code={code} alreadyViewed={result.viewed} />
+            <RevealFriend code={code} alreadyViewed={result.viewed} term={term} />
             <Link href={`/grupo/${code}/eu/amigo`} className={`${btn.secondary} mt-4`}>
               Ver lista de desejos e mandar mensagem anônima
             </Link>
@@ -84,9 +86,9 @@ export default async function MyAreaPage({ params, searchParams }: Props) {
         <Card>
           <CardTitle>💌 Mensagens de quem te tirou</CardTitle>
           <div className="flex flex-col gap-4">
-            <Conversation messages={fromSanta} today={today} otherLabel="Seu amigo secreto"
+            <Conversation messages={fromSanta} today={today} otherLabel={`Seu ${term}`}
               empty="Nenhuma mensagem ainda. Quem te tirou pode te mandar mensagens anônimas por aqui." />
-            <ReplyToSantaForm code={code} />
+            <ReplyToSantaForm code={code} term={term} />
           </div>
         </Card>
       )}
@@ -115,7 +117,7 @@ export default async function MyAreaPage({ params, searchParams }: Props) {
           <div className="flex flex-col gap-2">
             <CopyButton text={privateUrl} label="Copiar meu link privado" />
             <ExternalLink
-              href={whatsappShareUrl(`🔑 Meu link privado do amigo secreto "${me.group.name}" (não compartilhe):\n${privateUrl}`)}
+              href={whatsappShareUrl(`🔑 Meu link privado do ${term} "${me.group.name}" (não compartilhe):\n${privateUrl}`)}
               className={btn.secondary}
             >
               Salvar no meu WhatsApp

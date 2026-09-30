@@ -75,7 +75,7 @@ export default async function SeoPage({ params }: Props) {
         </header>
 
         <Link href="/criar" className={btn.primary}>
-          Criar amigo secreto grátis
+          {page.cta ?? "Criar amigo secreto grátis"}
         </Link>
 
         <Card>

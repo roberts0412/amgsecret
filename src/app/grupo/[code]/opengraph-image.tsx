@@ -3,8 +3,9 @@ import { formatCents, formatShortDate } from "@/lib/format";
 import { ogCard, OG_SIZE } from "@/lib/og";
 import { normalizeGroupCode } from "@/lib/security/tokens";
 import { SITE_NAME } from "@/lib/brand";
+import { gameTitle } from "@/lib/game-kinds";
 
-export const alt = "Convite para o amigo secreto";
+export const alt = "Convite para o sorteio do grupo";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 
@@ -17,7 +18,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
   const group = code
     ? await getDb().group.findUnique({
         where: { code },
-        select: { name: true, eventDate: true, eventTime: true, giftValueCents: true, status: true },
+        select: { name: true, eventDate: true, eventTime: true, giftValueCents: true, status: true, gameKind: true, gameName: true },
       })
     : null;
   if (!group || group.status === "ARCHIVED") {
@@ -26,5 +27,5 @@ export default async function Image({ params }: { params: Promise<{ code: string
   const lines: string[] = [];
   if (group.eventDate) lines.push(`Dia ${formatShortDate(group.eventDate)}${group.eventTime ? ` às ${group.eventTime}` : ""}`);
   if (group.giftValueCents !== null) lines.push(`Presente de até ${formatCents(group.giftValueCents)}`);
-  return ogCard({ title: group.name, lines, footer: "Toque para entrar e confirmar" });
+  return ogCard({ title: group.name, label: gameTitle(group), lines, footer: "Toque para entrar e confirmar" });
 }

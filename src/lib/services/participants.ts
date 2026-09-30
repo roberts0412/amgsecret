@@ -83,7 +83,7 @@ export async function authenticate(db: Db, rawCode: string, token: unknown): Pro
     where: { tokenHash: hashToken(token) },
     select: {
       id: true, name: true, role: true, status: true, lastSeenAt: true,
-      group: { select: { id: true, code: true, name: true, status: true, plan: true } },
+      group: { select: { id: true, code: true, name: true, status: true, plan: true, gameKind: true, gameName: true } },
     },
   });
   if (!p || p.status === "REMOVED" || p.group.code !== code || p.group.status === "ARCHIVED") return null;
@@ -102,10 +102,10 @@ export async function findByAccessToken(db: Db, token: unknown) {
   if (!isWellFormedToken(token)) return null;
   const p = await db.participant.findUnique({
     where: { tokenHash: hashToken(token) },
-    select: { name: true, status: true, group: { select: { code: true, name: true, status: true } } },
+    select: { name: true, status: true, group: { select: { code: true, name: true, status: true, gameKind: true, gameName: true } } },
   });
   if (!p || p.status === "REMOVED" || p.group.status === "ARCHIVED") return null;
-  return { name: p.name, groupCode: p.group.code, groupName: p.group.name };
+  return { name: p.name, groupCode: p.group.code, groupName: p.group.name, gameKind: p.group.gameKind, gameName: p.group.gameName };
 }
 
 /** Confirma participação (INVITED -> CONFIRMED), apenas antes do sorteio. */

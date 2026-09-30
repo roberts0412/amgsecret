@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { gameTerm } from "@/lib/game-kinds";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AccessForm } from "@/components/forms";
@@ -50,7 +51,7 @@ export default async function AccessPage({ params }: Props) {
         <p className="text-4xl" aria-hidden>🔑</p>
         <h1 className="mt-2 text-xl font-bold">Olá, {found.name}!</h1>
         <p className="mt-2 mb-4 text-slate-600">
-          Este é o seu link privado do amigo secreto <strong>{found.groupName}</strong>.
+          Este é o seu link privado do {gameTerm(found)} <strong>{found.groupName}</strong>.
         </p>
         <AccessForm token={token} name={found.name} groupName={found.groupName} />
         <p className="mt-3 text-xs text-slate-500">Não é você? Feche esta página — este link é pessoal.</p>

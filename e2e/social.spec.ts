@@ -58,6 +58,11 @@ test("desejos, mensagens anônimas e mural", async ({ browser }) => {
   await maria.getByRole("button", { name: "Salvar desejo" }).click();
   await expect(maria.getByText("Desejo adicionado! 🎁")).toBeVisible();
   await expect(maria.getByText("Fone Bluetooth")).toBeVisible();
+  // o formulário continua aberto para o próximo desejo
+  await maria.getByLabel("O que você quer ganhar?").fill("Livro de receitas");
+  await maria.getByLabel("Link do produto").fill("https://www.amazon.com.br/dp/B0LIVRO?tag=outra-20");
+  await maria.getByRole("button", { name: "Salvar desejo" }).click();
+  await expect(maria.getByText("Livro de receitas")).toBeVisible();
 
   // mural (não anônimo)
   const joao = pages.João!;
@@ -84,12 +89,20 @@ test("desejos, mensagens anônimas e mural", async ({ browser }) => {
     await p.goto(`/grupo/${code}/eu/amigo`);
     const friend = (await p.getByRole("heading", { level: 1 }).textContent())!.trim();
     expect(friend).not.toBe(n);
+    // sugestões de presente (afiliado) + aviso obrigatório
+    const ideas = p.getByRole("link", { name: /Ver sugestões na Amazon/ });
+    await expect(ideas).toHaveAttribute("href", /^https:\/\/www\.amazon\.com\.br\/s\?.*tag=e2eteste-20/);
+    await expect(p.getByText(/links para a Amazon são de afiliado/)).toBeVisible();
     if (friend === "Maria") {
       santa = n;
       const link = p.getByRole("link", { name: /Ver produto em loja\.com\.br/ });
       await expect(link).toHaveAttribute("href", "https://www.loja.com.br/fone");
       await expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
       await expect(p.getByText("≈ R$ 150,00")).toBeVisible();
+      // link da Amazon ganha a tag do site (substituindo a de terceiros) e é marcado como patrocinado
+      const amazon = p.getByRole("link", { name: /Ver produto em amazon\.com\.br/ });
+      await expect(amazon).toHaveAttribute("href", "https://www.amazon.com.br/dp/B0LIVRO?tag=e2eteste-20");
+      await expect(amazon).toHaveAttribute("rel", "sponsored noopener noreferrer nofollow");
     } else {
       await expect(p.getByText(/ainda não adicionou desejos/)).toBeVisible();
       await expect(p.getByText("Fone Bluetooth")).toHaveCount(0);

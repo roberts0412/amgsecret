@@ -90,7 +90,9 @@ describe("authenticate", () => {
 
   it("findByAccessToken mostra só nome e grupo", async () => {
     const { code, token } = await setup();
-    expect(await findByAccessToken(db, token)).toEqual({ name: "Robert", groupCode: code, groupName: "Natal da Família" });
+    expect(await findByAccessToken(db, token)).toEqual({
+      name: "Robert", groupCode: code, groupName: "Natal da Família", gameKind: "secreto", gameName: null,
+    });
     expect(await findByAccessToken(db, "x")).toBeNull();
   });
 });
@@ -219,6 +221,23 @@ describe("updateGroupDetails", () => {
     await updateGroupDetails(db, organizer, { name: "Natal 2026", location: "Sítio", giftValue: 5000 });
     const g = await db.group.findUniqueOrThrow({ where: { code } });
     expect(g).toMatchObject({ name: "Natal 2026", location: "Sítio", giftValueCents: 5000, eventDate: null, status: "DRAWN" });
+  });
+
+  it("nome da brincadeira: definido ao criar, mantido se não enviado, trocado pelo organizador", async () => {
+    const { code: oculto } = await createGroup(db, { ...groupInput, gameKind: "oculto" });
+    expect((await getPublicGroupView(db, oculto))?.gameKind).toBe("oculto");
+
+    const { code, organizer } = await setup();
+    expect((await getPublicGroupView(db, code))?.gameKind).toBe("secreto");
+    await updateGroupDetails(db, organizer, { name: "Natal", gameKind: "onca" });
+    await updateGroupDetails(db, organizer, { name: "Natal 2" });
+    expect((await getPublicGroupView(db, code))?.gameKind).toBe("onca");
+
+    // "outro" guarda o nome escrito; voltar para um nome pronto apaga o nome escrito
+    await updateGroupDetails(db, organizer, { name: "Natal", gameKind: "outro", gameName: "amigo doce" });
+    expect(await getPublicGroupView(db, code)).toMatchObject({ gameKind: "outro", gameName: "amigo doce" });
+    await updateGroupDetails(db, organizer, { name: "Natal", gameKind: "secreto", gameName: "ignorado" });
+    expect(await getPublicGroupView(db, code)).toMatchObject({ gameKind: "secreto", gameName: null });
   });
 });
 

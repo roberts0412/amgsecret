@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CUSTOM_GAME_KIND, DEFAULT_GAME_KIND, GAME_KIND_IDS, GAME_NAME_MAX, type GameKind } from "@/lib/game-kinds";
 import { AppError } from "@/lib/errors";
 import { checkPin, PIN_LENGTH } from "@/lib/pin-rules";
 import { cleanLine, cleanMultiline } from "@/lib/text";
@@ -198,7 +199,7 @@ const pinFields = { pin: pinSchema, pinConfirm: z.string().optional() };
 
 export const personNameSchema = line(2, 60, "o nome");
 
-export const groupDetailsSchema = (now = new Date()) =>
+const groupDetailsBase = (now: Date) =>
   z.object({
     name: line(3, 80, "o nome do grupo"),
     description: optionalMultiline(500, "a descrição"),
@@ -206,10 +207,32 @@ export const groupDetailsSchema = (now = new Date()) =>
     eventTime: optionalTime,
     location: optionalLine(120, "o local"),
     giftValue: optionalMoney,
+    gameKind: z.preprocess(
+      (v) => (v === undefined || v === "" ? DEFAULT_GAME_KIND : v),
+      z.enum(GAME_KIND_IDS, { error: "Escolha a brincadeira." }),
+    ),
+    /** Só para gameKind "outro": nome escrito pelo organizador (só letras). */
+    gameName: optionalLine(GAME_NAME_MAX, "o nome da brincadeira").pipe(
+      z
+        .string()
+        .regex(/^[\p{L}\p{M}' -]{3,}$/u, "Use só letras (ex.: amigo doce), com pelo menos 3.")
+        .optional(),
+    ),
   });
 
+function gameNameRequired(v: { gameKind?: string; gameName?: string }, ctx: z.RefinementCtx) {
+  if (v.gameKind === CUSTOM_GAME_KIND && !v.gameName) {
+    ctx.addIssue({ code: "custom", path: ["gameName"], message: "Escreva o nome da brincadeira." });
+  }
+}
+
+export const groupDetailsSchema = (now = new Date()) => groupDetailsBase(now).superRefine(gameNameRequired);
+
 export const createGroupSchema = (now = new Date()) =>
-  groupDetailsSchema(now).extend({ organizerName: personNameSchema, ...pinFields }).superRefine(pinsMatch);
+  groupDetailsBase(now)
+    .extend({ organizerName: personNameSchema, ...pinFields })
+    .superRefine(pinsMatch)
+    .superRefine(gameNameRequired);
 
 export const joinGroupSchema = z
   .object({
@@ -233,8 +256,10 @@ export const recoverAccessSchema = z.object({
 /** Criar/trocar PIN estando logado. */
 export const setPinSchema = z.object(pinFields).superRefine(pinsMatch);
 
-export type GroupDetailsInput = z.infer<ReturnType<typeof groupDetailsSchema>>;
-export type CreateGroupInput = z.infer<ReturnType<typeof createGroupSchema>>;
+/** gameKind opcional para quem chama o serviço direto (ausente = padrão/sem mudança). */
+type WithOptionalKind<T> = Omit<T, "gameKind"> & { gameKind?: GameKind };
+export type GroupDetailsInput = WithOptionalKind<z.infer<ReturnType<typeof groupDetailsSchema>>>;
+export type CreateGroupInput = WithOptionalKind<z.infer<ReturnType<typeof createGroupSchema>>>;
 export type JoinGroupInput = z.infer<typeof joinGroupSchema>;
 
 // ---------------------------------------------------------------------------

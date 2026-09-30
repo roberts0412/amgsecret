@@ -6,6 +6,9 @@ permitidos. Usa a instalação com Docker descrita em `docs/DEPLOY.md`.
 
 Tempo estimado: ~1 hora (a maior parte é esperar cadastro e DNS).
 
+> **Vindo da Vercel?** O site antigo continua no ar até o passo 4. Só no fim
+> você troca o DNS para o servidor novo — veja "Migrando da Vercel" no final.
+
 ## 1. Compre o domínio (registro.br)
 
 1. Acesse https://registro.br, pesquise um nome (ex.: `amigosecretoonline.com.br`)
@@ -62,6 +65,10 @@ registro.br) → adicione:
 
 Pode levar de minutos a algumas horas para propagar.
 
+Se o domínio já apontava para a Vercel: **edite** o registro A existente
+(troque o IP) e **apague o CNAME `www`** antes de criar o A `www`. Não mexa
+nos registros **TXT** (verificação do Google Search Console e da Vercel).
+
 ## 5. Instale o site no servidor
 
 Conecte por SSH. No Windows (PowerShell), com o arquivo da chave baixado:
@@ -104,6 +111,7 @@ APP_URL=https://seudominio.com.br
 POSTGRES_PASSWORD=   ← gere com: openssl rand -hex 32
 APP_SECRET=          ← gere com: openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
 CONTACT_EMAIL=seu@email.com
+AMAZON_ASSOCIATE_TAG=suatag-20     ← opcional: sua ID de Associado da Amazon
 ```
 
 Dica: para gerar, saia do nano, rode os comandos `openssl` no terminal, copie
@@ -144,6 +152,17 @@ Abra `https://seudominio.com.br` no celular. 🎉
 Aparecem um anúncio discreto por página pública e o aviso de cookies. Páginas
 privadas nunca têm anúncio.
 
+## 7. Links de afiliado da Amazon (opcional)
+
+Com `AMAZON_ASSOCIATE_TAG` no `.env`:
+- links da Amazon Brasil na lista de desejos recebem a sua tag;
+- quem abre "quem eu tirei" vê "Sem ideia de presente? Ver sugestões na
+  Amazon" (limitado ao valor combinado do grupo, se houver);
+- aparece o aviso de afiliado exigido pela Amazon.
+
+Nenhum dado do grupo ou da pessoa vai no link. Para ligar ou trocar a tag:
+`nano .env` e `docker compose up -d` (não precisa de `--build`).
+
 ## Atualizar, backup e problemas
 
 - **Atualizar:** `cd ~/amgsecret && git pull && docker compose up -d --build`
@@ -156,6 +175,29 @@ privadas nunca têm anúncio.
 | Erro de certificado HTTPS | DNS ainda propagando; confira o registro A e aguarde; depois `docker compose restart caddy` |
 | "Out of capacity" ao criar a VM | Outro availability domain ou tentar mais tarde |
 | `permission denied` no docker | Saia e entre de novo no SSH (grupo docker) |
+| Build trava ou "killed" (VM de 1 GB) | Crie swap: `sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile` |
+| Cadastro na Oracle recusado | Use outro cartão de crédito; se não der, um VPS barato (Hetzner/Contabo) com Ubuntu segue este mesmo guia a partir do passo 5 |
+
+## Migrando da Vercel
+
+1. Faça os passos 2, 3 e 5 com o site da Vercel ainda no ar. No `.env`,
+   use `APP_URL=https://amigosecretofacil.com.br` (seu domínio).
+2. **Dados:** o jeito simples é começar do zero (novo `APP_SECRET`, banco
+   vazio). Para levar os grupos existentes, copie o banco do Neon **e** use o
+   **mesmo `APP_SECRET`** da Vercel — sem ele, os sorteios copiados ficam
+   ilegíveis:
+   ```bash
+   # no servidor, antes de abrir o site ao público (banco ainda vazio)
+   docker compose stop app
+   docker run --rm postgres:17-alpine pg_dump --data-only --disable-triggers \
+     --exclude-table=_prisma_migrations "URL_DIRETA_DO_NEON" > neon.sql
+   docker compose exec -T db psql -v ON_ERROR_STOP=1 -U amigo amigo < neon.sql
+   docker compose up -d
+   ```
+   (a URL direta do Neon contém a senha: digite só no servidor, nunca em chat.)
+3. Troque o DNS (passo 4). Em minutos a algumas horas o domínio passa a abrir o
+   servidor novo e o Caddy emite o HTTPS sozinho.
+4. Confira `https://seu-dominio/api/health` e crie um grupo de teste.
 
 ## Depois de migrar
 

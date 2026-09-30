@@ -27,6 +27,11 @@ const schema = z.object({
     (v) => (v === "" ? undefined : v),
     z.string().regex(/^\d{5,20}$/, "ADSENSE_SLOT_ID deve ser numérico").optional(),
   ),
+  /** Tag do Programa de Associados da Amazon (opcional; ex.: "meusite-20"). */
+  AMAZON_ASSOCIATE_TAG: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().regex(/^[A-Za-z0-9-]{2,64}$/, "AMAZON_ASSOCIATE_TAG deve ser como meusite-20").optional(),
+  ),
   /** E-mail de contato exibido na Política de Privacidade (LGPD). */
   CONTACT_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
   /**

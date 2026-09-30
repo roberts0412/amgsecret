@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   const contact = getEnv().CONTACT_EMAIL;
   return (
-    <LegalPage title="Política de Privacidade" updated="28/09/2026">
+    <LegalPage title="Política de Privacidade" updated="30/09/2026">
       <p>
         Esta política explica como tratamos dados pessoais no {SITE_NAME}, de acordo com a Lei Geral de Proteção de
         Dados (LGPD — Lei 13.709/2018). Coletamos apenas o necessário para o sorteio funcionar.
@@ -63,6 +63,10 @@ export default function PrivacyPage() {
       <p>
         Não vendemos dados. Eles ficam no provedor de hospedagem do site. Quando há anúncios, o Google recebe dados de
         navegação conforme a sua escolha de cookies e a política do próprio Google.
+      </p>
+      <p>
+        Alguns links para a Amazon são de afiliado. Eles levam apenas o código do site — nenhum dado seu, do seu grupo
+        ou do seu sorteio. Ao clicar, você passa a seguir a política de privacidade da Amazon.
       </p>
 
       <h2>Por quanto tempo guardamos</h2>

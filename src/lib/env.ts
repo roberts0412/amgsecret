@@ -52,12 +52,15 @@ let cached: Env | undefined;
 
 /**
  * URL pública: APP_URL; se não definida, a URL de produção que a Vercel
- * informa (VERCEL_PROJECT_PRODUCTION_URL, ex.: "amgsecret.vercel.app");
+ * informa (VERCEL_PROJECT_PRODUCTION_URL, ex.: "amgsecret.vercel.app") ou a da
+ * Netlify (URL);
  * por fim, localhost para desenvolvimento.
  */
 export function resolveAppUrl(env: NodeJS.ProcessEnv = process.env): string {
   if (env.APP_URL) return env.APP_URL;
   if (env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  // Netlify: URL = endereço principal do site (domínio próprio, se houver)
+  if (env.NETLIFY === "true" && env.URL?.startsWith("https://")) return env.URL;
   return "http://localhost:3000";
 }
 

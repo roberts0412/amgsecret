@@ -18,4 +18,12 @@ describe("clientIpFromHeaders", () => {
     expect(clientIpFromHeaders(h({ "x-forwarded-for": "<script>, 1.2.3.4" }), true)).toBe("direct");
     expect(clientIpFromHeaders(h({ "x-real-ip": "lixo" }), true)).toBe("direct");
   });
+
+  it("Netlify: só confia em x-nf-client-connection-ip (X-Real-IP/XFF podem ser forjados)", () => {
+    const forged = { "x-real-ip": "6.6.6.6", "x-forwarded-for": "7.7.7.7" };
+    expect(clientIpFromHeaders(h({ ...forged, "x-nf-client-connection-ip": "8.8.4.4" }), true, true)).toBe("8.8.4.4");
+    expect(clientIpFromHeaders(h(forged), true, true)).toBe("direct");
+    // fora da Netlify o cabeçalho da Netlify é ignorado (poderia ser forjado)
+    expect(clientIpFromHeaders(h({ "x-nf-client-connection-ip": "8.8.4.4" }), true, false)).toBe("direct");
+  });
 });

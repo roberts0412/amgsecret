@@ -1,0 +1,8 @@
+# Netlify (plano grátis permite uso comercial: anúncios e afiliados).
+# Guia: docs/DEPLOY-NETLIFY.md
+[build]
+  # aplica as migrações do banco (DIRECT_DATABASE_URL) e faz o build
+  command = "npx prisma migrate deploy && npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"

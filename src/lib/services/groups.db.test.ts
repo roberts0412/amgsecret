@@ -91,7 +91,7 @@ describe("authenticate", () => {
   it("findByAccessToken mostra só nome e grupo", async () => {
     const { code, token } = await setup();
     expect(await findByAccessToken(db, token)).toEqual({
-      name: "Robert", groupCode: code, groupName: "Natal da Família", gameKind: "secreto",
+      name: "Robert", groupCode: code, groupName: "Natal da Família", gameKind: "secreto", gameName: null,
     });
     expect(await findByAccessToken(db, "x")).toBeNull();
   });
@@ -232,6 +232,12 @@ describe("updateGroupDetails", () => {
     await updateGroupDetails(db, organizer, { name: "Natal", gameKind: "onca" });
     await updateGroupDetails(db, organizer, { name: "Natal 2" });
     expect((await getPublicGroupView(db, code))?.gameKind).toBe("onca");
+
+    // "outro" guarda o nome escrito; voltar para um nome pronto apaga o nome escrito
+    await updateGroupDetails(db, organizer, { name: "Natal", gameKind: "outro", gameName: "amigo doce" });
+    expect(await getPublicGroupView(db, code)).toMatchObject({ gameKind: "outro", gameName: "amigo doce" });
+    await updateGroupDetails(db, organizer, { name: "Natal", gameKind: "secreto", gameName: "ignorado" });
+    expect(await getPublicGroupView(db, code)).toMatchObject({ gameKind: "secreto", gameName: null });
   });
 });
 

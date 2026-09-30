@@ -3,15 +3,24 @@ import { GAME_KIND_IDS, gameTerm, gameTitle } from "./game-kinds";
 
 describe("nome da brincadeira", () => {
   it("traduz o tipo do grupo", () => {
-    expect(gameTerm("oculto")).toBe("amigo oculto");
-    expect(gameTitle("onca")).toBe("Amigo da onça");
-    expect(gameTitle("chocolate")).toBe("Amigo chocolate");
+    expect(gameTerm({ gameKind: "oculto" })).toBe("amigo oculto");
+    expect(gameTitle({ gameKind: "onca" })).toBe("Amigo da onça");
+    expect(gameTitle({ gameKind: "chocolate" })).toBe("Amigo chocolate");
+  });
+
+  it("\"outro\" usa o nome escrito pelo organizador", () => {
+    expect(gameTerm({ gameKind: "outro", gameName: "amigo doce" })).toBe("amigo doce");
+    expect(gameTitle({ gameKind: "outro", gameName: "amigo doce" })).toBe("Amigo doce");
+    // sem nome, não fica em branco
+    expect(gameTerm({ gameKind: "outro", gameName: "  " })).toBe("amigo secreto");
+    // nome guardado só vale para "outro"
+    expect(gameTerm({ gameKind: "oculto", gameName: "qualquer" })).toBe("amigo oculto");
   });
 
   it("valor ausente ou desconhecido vira amigo secreto", () => {
     expect(gameTerm(null)).toBe("amigo secreto");
-    expect(gameTerm(undefined)).toBe("amigo secreto");
-    expect(gameTerm("<script>")).toBe("amigo secreto");
+    expect(gameTerm({})).toBe("amigo secreto");
+    expect(gameTerm({ gameKind: "<script>" })).toBe("amigo secreto");
   });
 
   it("ids curtos (cabem na coluna do banco) e sem repetição", () => {

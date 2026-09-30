@@ -47,7 +47,7 @@ export default async function MyAreaPage({ params, searchParams }: Props) {
   ]);
   const privateUrl = token ? new URL(`/acesso/${token}`, getEnv().APP_URL).toString() : null;
   const today = todayInEventTz();
-  const term = gameTerm(me.group.gameKind);
+  const term = gameTerm(me.group);
 
   return (
     <PageShell>

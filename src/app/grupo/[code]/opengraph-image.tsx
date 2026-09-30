@@ -18,7 +18,7 @@ export default async function Image({ params }: { params: Promise<{ code: string
   const group = code
     ? await getDb().group.findUnique({
         where: { code },
-        select: { name: true, eventDate: true, eventTime: true, giftValueCents: true, status: true, gameKind: true },
+        select: { name: true, eventDate: true, eventTime: true, giftValueCents: true, status: true, gameKind: true, gameName: true },
       })
     : null;
   if (!group || group.status === "ARCHIVED") {
@@ -27,5 +27,5 @@ export default async function Image({ params }: { params: Promise<{ code: string
   const lines: string[] = [];
   if (group.eventDate) lines.push(`Dia ${formatShortDate(group.eventDate)}${group.eventTime ? ` às ${group.eventTime}` : ""}`);
   if (group.giftValueCents !== null) lines.push(`Presente de até ${formatCents(group.giftValueCents)}`);
-  return ogCard({ title: group.name, label: gameTitle(group.gameKind), lines, footer: "Toque para entrar e confirmar" });
+  return ogCard({ title: group.name, label: gameTitle(group), lines, footer: "Toque para entrar e confirmar" });
 }

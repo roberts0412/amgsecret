@@ -34,6 +34,7 @@ export async function createGroup(db: Db, input: CreateGroupInput): Promise<Crea
             location: input.location ?? null,
             giftValueCents: input.giftValue ?? null,
             gameKind: input.gameKind,
+            gameName: input.gameKind === "outro" ? (input.gameName ?? null) : null,
           },
           select: { id: true },
         });
@@ -85,6 +86,7 @@ export interface PublicGroupView {
   plan: Plan;
   theme: string;
   gameKind: string;
+  gameName: string | null;
   participants: PublicParticipant[];
   confirmedCount: number;
 }
@@ -100,7 +102,7 @@ export async function getPublicGroupView(db: Db, rawCode: string): Promise<Publi
     where: { code },
     select: {
       code: true, name: true, description: true, eventDate: true, eventTime: true,
-      location: true, giftValueCents: true, status: true, plan: true, theme: true, gameKind: true,
+      location: true, giftValueCents: true, status: true, plan: true, theme: true, gameKind: true, gameName: true,
       participants: {
         where: { status: { not: "REMOVED" } },
         orderBy: { createdAt: "asc" },
@@ -181,7 +183,10 @@ export async function updateGroupDetails(db: Db, session: SessionParticipant | n
       eventTime: input.eventTime ?? null,
       location: input.location ?? null,
       giftValueCents: input.giftValue ?? null,
-      gameKind: input.gameKind,
+      ...(input.gameKind && {
+        gameKind: input.gameKind,
+        gameName: input.gameKind === "outro" ? (input.gameName ?? null) : null,
+      }),
     },
   });
   if (updated.count === 0) throw new AppError("GROUP_LOCKED", "Este grupo foi arquivado.");

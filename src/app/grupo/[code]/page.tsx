@@ -26,10 +26,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!group) return { title: "Grupo não encontrado", robots: { index: false } };
   return {
     title: group.name,
-    description: `Você foi convidado(a) para o ${gameTerm(group.gameKind)} "${group.name}". Entre e confirme sua participação.`,
+    description: `Você foi convidado(a) para o ${gameTerm(group)} "${group.name}". Entre e confirme sua participação.`,
     robots: { index: false, follow: false },
     openGraph: {
-      title: `🎁 ${gameTitle(group.gameKind)}: ${group.name}`,
+      title: `🎁 ${gameTitle(group)}: ${group.name}`,
       description: "Entre pelo link e confirme sua participação.",
       siteName: SITE_NAME,
       locale: "pt_BR",
@@ -74,7 +74,7 @@ export default async function GroupPage({ params, searchParams }: Props) {
       )}
 
       <Card>
-        <p className="text-sm font-medium text-brand">{gameTitle(group.gameKind)}</p>
+        <p className="text-sm font-medium text-brand">{gameTitle(group)}</p>
         <h1 className="text-2xl font-extrabold tracking-tight">{group.name}</h1>
         <dl className="mt-3 grid gap-1.5 text-slate-700">
           {when && (
@@ -124,7 +124,7 @@ export default async function GroupPage({ params, searchParams }: Props) {
           )}
           <div className="mt-3 flex flex-col gap-2">
             <Link href={`/grupo/${code}/eu`} className={group.status === "DRAWN" ? btn.primary : btn.secondary}>
-              {group.status === "DRAWN" ? `🎁 Ver meu ${gameTerm(group.gameKind)}` : "👤 Minha área: desejos e link privado"}
+              {group.status === "DRAWN" ? `🎁 Ver meu ${gameTerm(group)}` : "👤 Minha área: desejos e link privado"}
             </Link>
             {me.role === "ORGANIZER" && (
               <Link href={`/grupo/${code}/admin`} className={btn.secondary}>
@@ -162,7 +162,7 @@ export default async function GroupPage({ params, searchParams }: Props) {
               Compartilhar no WhatsApp
             </ExternalLink>
             <CopyButton text={publicUrl} label="Copiar link do grupo" />
-            <NativeShareButton title={`${gameTitle(group.gameKind)}: ${group.name}`} text={inviteMessage(group, publicUrl)} />
+            <NativeShareButton title={`${gameTitle(group)}: ${group.name}`} text={inviteMessage(group, publicUrl)} />
           </div>
         </Card>
       )}

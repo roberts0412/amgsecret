@@ -6,7 +6,7 @@ import { btn, Card, PageShell } from "@/components/ui";
 import { getEnv } from "@/lib/env";
 import { jsonLdScript, SEO_PAGES } from "@/lib/seo-pages";
 import { SITE_NAME } from "@/lib/brand";
-import { GAME_KINDS, gameTitle } from "@/lib/game-kinds";
+import { NAMED_GAME_KINDS, gameTitle } from "@/lib/game-kinds";
 
 export const metadata: Metadata = {
   title: { absolute: `${SITE_NAME}: amigo secreto e amigo oculto online e grátis` },
@@ -37,9 +37,9 @@ export default function HomePage() {
           Crie o grupo, mande o link no WhatsApp e faça o sorteio. Cada pessoa vê só quem tirou.
         </p>
         <ul aria-label="Serve para" className="mt-4 flex flex-wrap justify-center gap-2">
-          {GAME_KINDS.map((k) => (
+          {NAMED_GAME_KINDS.map((k) => (
             <li key={k.id} className="rounded-full bg-white px-3 py-1 text-sm text-slate-700 ring-1 ring-slate-200">
-              <span aria-hidden>{k.emoji}</span> {gameTitle(k.id)}
+              <span aria-hidden>{k.emoji}</span> {gameTitle({ gameKind: k.id })}
             </li>
           ))}
         </ul>

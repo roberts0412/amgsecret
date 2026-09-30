@@ -13,12 +13,15 @@ import {
   updateGroupAction,
 } from "@/actions/groups";
 import { initialActionState } from "@/lib/action-state";
-import { DEFAULT_GAME_KIND, GAME_KINDS, gameTerm } from "@/lib/game-kinds";
+import { CUSTOM_GAME_KIND, DEFAULT_GAME_KIND, GAME_KINDS, GAME_NAME_MAX, gameTerm } from "@/lib/game-kinds";
+
+/** Nome usado nos rótulos do formulário ("outro" ainda sem nome → "grupo"). */
+const formTerm = (kind: string) => (kind === CUSTOM_GAME_KIND ? "grupo" : gameTerm({ gameKind: kind }));
 import { Field, FormMessage, SubmitButton } from "./form-kit";
 import { btn } from "./ui";
 
 type DetailsDefaults = Partial<
-  Record<"name" | "description" | "eventDate" | "eventTime" | "location" | "giftValue" | "gameKind", string>
+  Record<"name" | "description" | "eventDate" | "eventTime" | "location" | "giftValue" | "gameKind" | "gameName", string>
 >;
 
 /** Qual brincadeira: muda só o nome usado no grupo (o sorteio é o mesmo). */
@@ -37,7 +40,9 @@ function GameKindPicker({ value, onChange }: { value: string; onChange: (kind: s
               type="radio"
               name="gameKind"
               value={k.id}
-              checked={value === k.id}
+              // não controlado de propósito: após uma action com erro o React 19
+              // reinicia o formulário, e o padrão (defaultChecked) é a escolha atual
+              defaultChecked={value === k.id}
               onChange={() => onChange(k.id)}
               className="sr-only"
             />
@@ -65,7 +70,12 @@ function GroupDetailsFields({
   return (
     <>
       <GameKindPicker value={kind} onChange={onKindChange} />
-      <Field name="name" label={`Nome do ${gameTerm(kind)}`} state={state} required minLength={3} maxLength={80}
+      {kind === CUSTOM_GAME_KIND && (
+        <Field name="gameName" label="Nome da brincadeira" state={state} required minLength={3} maxLength={GAME_NAME_MAX}
+          placeholder="Ex.: amigo doce" defaultValue={defaults?.gameName} autoComplete="off"
+          hint="Aparece no convite e no grupo, como em &quot;Revelar meu amigo doce&quot;." />
+      )}
+      <Field name="name" label={`Nome do ${formTerm(kind)}`} state={state} required minLength={3} maxLength={80}
         placeholder="Ex.: Natal da Família" defaultValue={defaults?.name} autoComplete="off" />
       <div className="grid grid-cols-2 gap-3">
         <Field name="eventDate" label="Data" type="date" state={state} optional defaultValue={defaults?.eventDate} />
@@ -115,7 +125,7 @@ export function CreateGroupForm() {
         placeholder="Como o grupo te conhece" autoComplete="given-name"
         hint="Você também participa do sorteio." />
       <PinFields state={state} />
-      <SubmitButton pendingText="Criando…">{`Criar ${gameTerm(kind)}`}</SubmitButton>
+      <SubmitButton pendingText="Criando…">{`Criar ${formTerm(kind)}`}</SubmitButton>
     </form>
   );
 }

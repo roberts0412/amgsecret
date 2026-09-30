@@ -34,6 +34,29 @@ test("grupo de amigo oculto usa esse nome no grupo e no convite; organizador pod
   await expect(page.getByText("Amigo da onça", { exact: true })).toBeVisible();
 });
 
+test("brincadeira com nome próprio (Outro)", async ({ page }) => {
+  await page.goto("/criar");
+  await page.getByRole("radio", { name: "Outro" }).check({ force: true });
+  await page.getByLabel("Nome do grupo").fill("Turma do Escritório");
+  await page.getByLabel("Seu nome").fill("Robert");
+  await page.getByLabel(/Crie um PIN/).fill("730164");
+  await page.getByLabel("Repita o PIN").fill("730164");
+  // sem o nome da brincadeira, avisa e mantém o que foi digitado
+  await page.getByRole("button", { name: "Criar grupo" }).click();
+  await expect(page.getByText("Escreva o nome da brincadeira.")).toBeVisible();
+  await expect(page.getByLabel("Nome do grupo")).toHaveValue("Turma do Escritório");
+
+  await page.getByLabel("Nome da brincadeira").fill("amigo doce");
+  await page.getByLabel(/Crie um PIN/).fill("730164");
+  await page.getByLabel("Repita o PIN").fill("730164");
+  await page.getByRole("button", { name: "Criar grupo" }).click();
+  await expect(page).toHaveURL(/novo=1/);
+  await expect(page.getByText("Amigo doce", { exact: true })).toBeVisible();
+  const invite = page.getByRole("link", { name: "Compartilhar no WhatsApp" });
+  const text = decodeURIComponent(new URL((await invite.getAttribute("href"))!).searchParams.get("text")!);
+  expect(text).toContain("convidado(a) para o amigo doce *Turma do Escritório*");
+});
+
 test("páginas de amigo oculto, amigo da onça e amigo chocolate", async ({ page }) => {
   for (const [slug, cta] of [
     ["amigo-oculto-online", "Criar amigo oculto grátis"],

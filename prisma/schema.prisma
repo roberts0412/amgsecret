@@ -64,6 +64,8 @@ model Group {
   theme          String      @default("classico") @db.VarChar(30)
   /// Nome da brincadeira: secreto, oculto, onca... (src/lib/game-kinds.ts)
   gameKind       String      @default("secreto") @db.VarChar(20)
+  /// Nome escrito pelo organizador quando gameKind = "outro"
+  gameName       String?     @db.VarChar(30)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

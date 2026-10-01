@@ -7,8 +7,11 @@ import { SITE_NAME } from "@/lib/brand";
 
 /** metadataBase: URLs absolutas nas prévias (og:image precisa de URL completa). */
 export function generateMetadata(): Metadata {
+  const env = getEnv();
   return {
-    metadataBase: new URL(getEnv().APP_URL),
+    metadataBase: new URL(env.APP_URL),
+    // verificação do site no AdSense (meta tag): só com ADSENSE_CLIENT_ID (validado como ca-pub-<números>)
+    ...(env.ADSENSE_CLIENT_ID && { other: { "google-adsense-account": env.ADSENSE_CLIENT_ID } }),
     title: { default: `${SITE_NAME} — sorteio online e grátis`, template: `%s · ${SITE_NAME}` },
     description: "Crie seu amigo secreto online, grátis, com sorteio seguro, lista de desejos e convite pelo WhatsApp.",
     applicationName: SITE_NAME,

@@ -7,6 +7,8 @@ import { getSession } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { AppError, GENERIC_ERROR } from "@/lib/errors";
 import { addExclusion, redoDraw, removeExclusion, reopenGroup, revealMyResult, runDraw } from "@/lib/services/draws";
+import { emailEnabled } from "@/lib/email/send";
+import { notifyDrawDone } from "@/lib/services/notifications";
 import { normalizeGroupCode } from "@/lib/security/tokens";
 
 /* Mesmas regras de src/actions/groups.ts: identidade só pelo cookie. */
@@ -28,6 +30,16 @@ function idFrom(form: FormData, key: string, label = "Participante"): string {
 /** Ações destrutivas exigem confirmação explícita enviada pelo diálogo. */
 function requireConfirmation(form: FormData) {
   if (form.get("confirm") !== "sim") throw new AppError("VALIDATION", "Confirme a ação para continuar.");
+}
+
+/** Aviso por e-mail depois do sorteio (se configurado). Nunca derruba a ação. */
+async function notifyByEmail(groupId: string) {
+  if (!emailEnabled()) return;
+  try {
+    await notifyDrawDone(getDb(), groupId);
+  } catch (e) {
+    console.error("[email] aviso do sorteio falhou", e instanceof Error ? e.message : e);
+  }
 }
 
 function refresh(code: string) {
@@ -68,8 +80,10 @@ export async function runDrawAction(_prev: ActionState, form: FormData): Promise
     const code = codeFrom(form);
     requireConfirmation(form);
     await enforceRateLimit("organizerAction");
-    const { size } = await runDraw(getDb(), await getSession(code));
+    const session = await getSession(code);
+    const { size } = await runDraw(getDb(), session);
     refresh(code);
+    await notifyByEmail(session!.group.id);
     return { ok: true, message: `Sorteio realizado com ${size} participantes! 🎉 Cada um já pode ver quem tirou.` };
   });
 }
@@ -79,8 +93,10 @@ export async function redoDrawAction(_prev: ActionState, form: FormData): Promis
     const code = codeFrom(form);
     requireConfirmation(form);
     await enforceRateLimit("organizerAction");
-    const { size } = await redoDraw(getDb(), await getSession(code));
+    const session = await getSession(code);
+    const { size } = await redoDraw(getDb(), session);
     refresh(code);
+    await notifyByEmail(session!.group.id);
     return { ok: true, message: `Novo sorteio realizado com ${size} participantes. Os resultados anteriores foram invalidados.` };
   });
 }

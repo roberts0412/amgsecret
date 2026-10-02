@@ -6,7 +6,7 @@ import { getEnv } from "@/lib/env";
  * Chaves derivadas de APP_SECRET via HKDF — uma por finalidade, para que o
  * vazamento/uso indevido de uma não comprometa as outras.
  */
-export type KeyPurpose = "pair-encryption" | "receiver-lookup" | "sender-lookup" | "pin-pepper";
+export type KeyPurpose = "pair-encryption" | "receiver-lookup" | "sender-lookup" | "pin-pepper" | "email-unsubscribe";
 
 const cache = new Map<string, Buffer>();
 

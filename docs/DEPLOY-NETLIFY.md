@@ -102,6 +102,34 @@ Com o domínio funcionando na Netlify: na Vercel, **Settings → Domains** →
 remova o domínio; depois **Settings → Advanced → Delete Project** (assim cada
 `git push` não publica em dois lugares). O banco Neon continua o mesmo.
 
+## E-mails de aviso (opcional, Resend)
+
+Com isso, quem informou e-mail ao entrar no grupo recebe:
+- **aviso do sorteio** ("o sorteio foi feito, abra o grupo") — sem revelar quem tirou;
+- **lembrete 3 dias antes da festa** (data, local e valor), se o grupo tiver data.
+
+Todo e-mail tem link para parar de receber (apaga o endereço).
+
+1. Crie a conta em https://resend.com (plano grátis).
+2. **Domains → Add domain** → `amigosecretofacil.com.br`. O Resend mostra
+   alguns registros (TXT e MX, às vezes em um subdomínio como `send`).
+   Crie cada um no Registro.br (**Configurar endereçamento → Nova entrada**),
+   exatamente como aparecem, sem apagar os registros que já existem. Espere o
+   Resend mostrar **Verified**.
+3. **API Keys → Create API key** (permissão *Sending access*) e copie a chave
+   (`re_...`). É uma senha: cole só na Netlify.
+4. Na Netlify, adicione (All scopes):
+
+   | Nome | Valor |
+   |---|---|
+   | `RESEND_API_KEY` | a chave `re_...` |
+   | `EMAIL_FROM` | `Amigo Secreto Fácil <avisos@amigosecretofacil.com.br>` |
+   | `CRON_SECRET` | um texto aleatório de 64 caracteres (ex.: https://generate-secret.vercel.app/64) |
+
+5. **Trigger deploy**. Os lembretes rodam todo dia às 9h (Brasília) pela
+   função agendada `netlify/functions/lembretes.mjs` (aparece em
+   *Logs → Functions*).
+
 ## Anúncios
 
 Siga a seção 6 de `docs/DEPLOY-ORACLE.md` (AdSense), colocando

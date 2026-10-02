@@ -41,3 +41,11 @@ test("painel do dono: pede senha, recusa senha errada e mostra só números", as
   expect(html).toContain("Painel do dono");
   expect(html).toContain("grupos ativos");
 });
+
+test("e-mails: descadastro com link inválido e lembretes desligados sem segredo", async ({ page }) => {
+  const bad = await page.request.get("/api/email/sair?p=abcdefghijklmnopqrstuvwx&s=" + "x".repeat(32));
+  expect(bad.status()).toBe(400);
+  expect(await bad.text()).toContain("Link inválido");
+  expect((await page.request.post("/api/email/sair?p=abc&s=def")).status()).toBe(400);
+  expect((await page.request.post("/api/cron/lembretes")).status()).toBe(404);
+});

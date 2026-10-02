@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   const contact = getEnv().CONTACT_EMAIL;
   return (
-    <LegalPage title="Política de Privacidade" updated="30/09/2026">
+    <LegalPage title="Política de Privacidade" updated="02/10/2026">
       <p>
         Esta política explica como tratamos dados pessoais no {SITE_NAME}, de acordo com a Lei Geral de Proteção de
         Dados (LGPD — Lei 13.709/2018). Coletamos apenas o necessário para o sorteio funcionar.
@@ -21,7 +21,11 @@ export default function PrivacyPage() {
       <h2>Quais dados coletamos</h2>
       <ul>
         <li><strong>Nome</strong> (obrigatório) e <strong>apelido</strong> (opcional), visíveis para o grupo.</li>
-        <li><strong>E-mail e celular</strong> (opcionais), que não aparecem para o grupo.</li>
+        <li>
+          <strong>E-mail e celular</strong> (opcionais), que não aparecem para o grupo. O e-mail serve só para avisos do
+          próprio grupo (sorteio feito e lembrete antes da festa); todo e-mail tem um link para parar de receber, que
+          apaga o endereço.
+        </li>
         <li><strong>PIN de recuperação</strong>, guardado de forma irreversível (não conseguimos lê-lo).</li>
         <li><strong>Lista de desejos</strong>, <strong>mensagens secretas</strong> e <strong>posts no mural</strong>, se você usar esses recursos.</li>
         <li><strong>Dados do evento</strong> informados pelo organizador (nome, data, local, valor).</li>
@@ -61,7 +65,8 @@ export default function PrivacyPage() {
 
       <h2>Com quem compartilhamos</h2>
       <p>
-        Não vendemos dados. Eles ficam no provedor de hospedagem do site. Quando há anúncios, o Google recebe dados de
+        Não vendemos dados. Eles ficam no provedor de hospedagem do site. Os e-mails de aviso são enviados por um
+        serviço de envio de e-mails, que recebe só o endereço e o texto do aviso. Quando há anúncios, o Google recebe dados de
         navegação conforme a sua escolha de cookies e a política do próprio Google.
       </p>
       <p>

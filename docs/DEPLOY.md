@@ -123,6 +123,16 @@ Guarde os backups **fora do servidor** e, separadamente, o `APP_SECRET`.
 Com isso aparecem o aviso de cookies (LGPD) e um anúncio discreto por página
 pública. Páginas com dados privados nunca têm anúncios.
 
+## E-mails de aviso (opcional)
+
+Preencha `RESEND_API_KEY`, `EMAIL_FROM` e `CRON_SECRET` no `.env` (passo a
+passo do Resend em `docs/DEPLOY-NETLIFY.md`, seção E-mails), rode
+`docker compose up -d` e agende o lembrete diário com `crontab -e`:
+
+```
+0 12 * * * curl -s -X POST -H "Authorization: Bearer SEU_CRON_SECRET" https://seu-dominio/api/cron/lembretes
+```
+
 ## Como funciona por dentro
 
 | Serviço | Função |

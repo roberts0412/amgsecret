@@ -9,3 +9,7 @@ next-env.d.ts
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+# vídeos gerados por scripts/gravar-videos.mjs
+videos-divulgacao/
+videos/

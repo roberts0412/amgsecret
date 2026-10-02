@@ -32,6 +32,25 @@ const schema = z.object({
     (v) => (v === "" ? undefined : v),
     z.string().regex(/^[A-Za-z0-9-]{2,64}$/, "AMAZON_ASSOCIATE_TAG deve ser como meusite-20").optional(),
   ),
+  /** Senha do painel do dono (/painel). Sem ela, o painel não existe (404). */
+  OWNER_PANEL_PASSWORD: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(16, "OWNER_PANEL_PASSWORD precisa de pelo menos 16 caracteres").optional(),
+  ),
+  /**
+   * E-mails de aviso (Resend). Sem RESEND_API_KEY, nenhum e-mail é enviado.
+   * EMAIL_FROM: remetente verificado no Resend (padrão: avisos@<domínio do APP_URL>).
+   */
+  RESEND_API_KEY: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().regex(/^re_[A-Za-z0-9_]{8,200}$/, "RESEND_API_KEY deve começar com re_").optional(),
+  ),
+  EMAIL_FROM: z.preprocess((v) => (v === "" ? undefined : v), z.string().max(200).optional()),
+  /** Segredo da rota de lembretes (/api/cron/lembretes), chamada 1x por dia. */
+  CRON_SECRET: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(32, "CRON_SECRET precisa de pelo menos 32 caracteres").optional(),
+  ),
   /** E-mail de contato exibido na Política de Privacidade (LGPD). */
   CONTACT_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
   /**

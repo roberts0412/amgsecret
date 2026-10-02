@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getEnv } from "@/lib/env";
+import { GIFT_HUB, GIFT_PAGES } from "@/lib/gift-ideas";
 import { SEO_PAGES } from "@/lib/seo-pages";
 
 /**
@@ -15,5 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: url("/privacidade"), changeFrequency: "yearly", priority: 0.3 },
     { url: url("/termos"), changeFrequency: "yearly", priority: 0.3 },
     ...SEO_PAGES.map((p) => ({ url: url(`/${p.slug}`), changeFrequency: "monthly" as const, priority: 0.8 })),
+    { url: url(GIFT_HUB.path), changeFrequency: "monthly", priority: 0.7 },
+    ...GIFT_PAGES.map((p) => ({ url: url(`${GIFT_HUB.path}/${p.slug}`), changeFrequency: "monthly" as const, priority: 0.7 })),
   ];
 }

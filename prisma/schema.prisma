@@ -66,6 +66,8 @@ model Group {
   gameKind       String      @default("secreto") @db.VarChar(20)
   /// Nome escrito pelo organizador quando gameKind = "outro"
   gameName       String?     @db.VarChar(30)
+  /// Quando o lembrete por e-mail (3 dias antes da festa) foi enviado
+  reminderSentAt DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

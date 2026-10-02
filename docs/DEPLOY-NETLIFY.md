@@ -50,13 +50,24 @@ que já existem continuam funcionando.
 | `CONTACT_EMAIL` | seu e-mail de contato |
 | `AMAZON_ASSOCIATE_TAG` | sua ID de Associado (ex.: `meusite-20`) — opcional |
 | `ADSENSE_CLIENT_ID` / `ADSENSE_SLOT_ID` | depois da aprovação do AdSense |
+| `OWNER_PANEL_PASSWORD` | senha do seu painel de números em `/painel` (16+ caracteres) — opcional |
 
 > 🔒 Endereços do banco e `APP_SECRET` são senhas: cole só no painel da
 > Netlify, nunca em chats ou prints. Na Vercel, os valores ficam em
 > *Settings → Environment Variables* (ícone de olho).
 
-`APP_URL`, `CONTACT_EMAIL` e AdSense entram no build: ao mudar, faça
-**Trigger deploy**.
+Marque **All scopes** em cada variável (se ficar só em *Functions*, o build não
+as enxerga e falha com "datasource.url is required").
+
+`APP_URL`, `CONTACT_EMAIL`, AdSense e `AMAZON_ASSOCIATE_TAG` (páginas de
+ideias de presente) entram no build: ao mudar, faça **Trigger deploy**.
+
+## Painel do dono
+
+Com `OWNER_PANEL_PASSWORD` definida, `https://seu-dominio/painel` mostra
+grupos criados por dia, participantes, sorteios e brincadeiras — só números,
+nenhum nome ou resultado. O navegador pede usuário (qualquer um) e a senha.
+Sem a variável, a página não existe.
 
 ## 3. Confira no endereço da Netlify
 
@@ -90,6 +101,34 @@ causa do `APP_URL`) — normal.
 Com o domínio funcionando na Netlify: na Vercel, **Settings → Domains** →
 remova o domínio; depois **Settings → Advanced → Delete Project** (assim cada
 `git push` não publica em dois lugares). O banco Neon continua o mesmo.
+
+## E-mails de aviso (opcional, Resend)
+
+Com isso, quem informou e-mail ao entrar no grupo recebe:
+- **aviso do sorteio** ("o sorteio foi feito, abra o grupo") — sem revelar quem tirou;
+- **lembrete 3 dias antes da festa** (data, local e valor), se o grupo tiver data.
+
+Todo e-mail tem link para parar de receber (apaga o endereço).
+
+1. Crie a conta em https://resend.com (plano grátis).
+2. **Domains → Add domain** → `amigosecretofacil.com.br`. O Resend mostra
+   alguns registros (TXT e MX, às vezes em um subdomínio como `send`).
+   Crie cada um no Registro.br (**Configurar endereçamento → Nova entrada**),
+   exatamente como aparecem, sem apagar os registros que já existem. Espere o
+   Resend mostrar **Verified**.
+3. **API Keys → Create API key** (permissão *Sending access*) e copie a chave
+   (`re_...`). É uma senha: cole só na Netlify.
+4. Na Netlify, adicione (All scopes):
+
+   | Nome | Valor |
+   |---|---|
+   | `RESEND_API_KEY` | a chave `re_...` |
+   | `EMAIL_FROM` | `Amigo Secreto Fácil <avisos@amigosecretofacil.com.br>` |
+   | `CRON_SECRET` | um texto aleatório de 64 caracteres (ex.: https://generate-secret.vercel.app/64) |
+
+5. **Trigger deploy**. Os lembretes rodam todo dia às 9h (Brasília) pela
+   função agendada `netlify/functions/lembretes.mjs` (aparece em
+   *Logs → Functions*).
 
 ## Anúncios
 

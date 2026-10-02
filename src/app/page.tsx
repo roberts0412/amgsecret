@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdSlot } from "@/components/ad-slot";
 import { GoToGroupForm } from "@/components/forms";
+import { GIFT_HUB } from "@/lib/gift-ideas";
 import { btn, Card, PageShell } from "@/components/ui";
 import { getEnv } from "@/lib/env";
 import { jsonLdScript, SEO_PAGES } from "@/lib/seo-pages";
@@ -69,6 +70,11 @@ export default function HomePage() {
               </Link>
             </li>
           ))}
+          <li>
+            <Link href={GIFT_HUB.path} className="inline-flex min-h-11 items-center rounded-full bg-white px-3 text-sm ring-1 ring-slate-200 hover:bg-slate-50">
+              🎁 Ideias de presente por valor
+            </Link>
+          </li>
         </ul>
       </nav>
 

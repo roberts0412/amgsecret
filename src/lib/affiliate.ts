@@ -41,3 +41,15 @@ export function giftIdeasLink(tag: string | undefined, maxCents: number | null):
   url.searchParams.set("tag", tag);
   return url.toString();
 }
+
+/**
+ * Busca na Amazon Brasil (para as páginas de ideias de presente). Sem tag, o
+ * link continua útil, só não é de afiliado.
+ */
+export function amazonSearchLink(query: string, maxReais: number | null, tag: string | undefined): OutboundLink {
+  const url = new URL("https://www.amazon.com.br/s");
+  url.searchParams.set("k", query);
+  if (maxReais) url.searchParams.set("rh", `p_36:-${maxReais * 100}`);
+  if (tag) url.searchParams.set("tag", tag);
+  return { href: url.toString(), affiliate: !!tag };
+}

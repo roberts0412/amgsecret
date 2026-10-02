@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { affiliateLink, giftIdeasLink } from "./affiliate";
+import { affiliateLink, amazonSearchLink, giftIdeasLink } from "./affiliate";
 
 describe("links de afiliado", () => {
   it("sem tag, nada muda", () => {
@@ -44,5 +44,17 @@ describe("links de afiliado", () => {
     const semValor = new URL(giftIdeasLink("loja-20", null)!);
     expect(semValor.searchParams.get("k")).toBe("presente amigo secreto");
     expect(semValor.searchParams.has("rh")).toBe(false);
+  });
+
+  it("busca de ideias: com e sem tag, com limite de preço", () => {
+    const sem = amazonSearchLink("garrafa térmica", 50, undefined);
+    expect(sem.affiliate).toBe(false);
+    expect(new URL(sem.href).searchParams.get("rh")).toBe("p_36:-5000");
+    expect(new URL(sem.href).searchParams.has("tag")).toBe(false);
+    const com = amazonSearchLink("garrafa térmica", null, "loja-20");
+    expect(com.affiliate).toBe(true);
+    expect(new URL(com.href).searchParams.get("k")).toBe("garrafa térmica");
+    expect(new URL(com.href).searchParams.has("rh")).toBe(false);
+    expect(new URL(com.href).searchParams.get("tag")).toBe("loja-20");
   });
 });

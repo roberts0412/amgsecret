@@ -161,7 +161,7 @@ Com `AMAZON_ASSOCIATE_TAG` no `.env`:
 - aparece o aviso de afiliado exigido pela Amazon.
 
 Nenhum dado do grupo ou da pessoa vai no link. Para ligar ou trocar a tag:
-`nano .env` e `docker compose up -d` (não precisa de `--build`).
+`nano .env` e `docker compose up -d --build` (as páginas de ideias de presente usam a tag no build).
 
 ## Atualizar, backup e problemas
 

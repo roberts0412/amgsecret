@@ -165,7 +165,8 @@ export function JoinGroupForm({ code }: { code: string }) {
       {more ? (
         <>
           <Field name="nickname" label="Apelido" state={state} optional maxLength={40} />
-          <Field name="email" label="E-mail" type="email" state={state} optional autoComplete="email" maxLength={254} />
+          <Field name="email" label="E-mail" type="email" state={state} optional autoComplete="email" maxLength={254}
+            hint="Para receber o aviso do sorteio e um lembrete antes da festa." />
           <Field name="phone" label="Celular" type="tel" state={state} optional autoComplete="tel" maxLength={20} />
           <p className="text-xs text-slate-500">Seus contatos não aparecem para o grupo.</p>
         </>

@@ -23,6 +23,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: false,
     timeout: 60_000,
-    env: { PORT: String(PORT), DATABASE_URL: E2E_DB, APP_URL: `http://localhost:${PORT}`, TRUST_PROXY: "true", AMAZON_ASSOCIATE_TAG: "e2eteste-20" },
+    env: { PORT: String(PORT), DATABASE_URL: E2E_DB, APP_URL: `http://localhost:${PORT}`, TRUST_PROXY: "true", AMAZON_ASSOCIATE_TAG: "e2eteste-20", OWNER_PANEL_PASSWORD: "senha-do-painel-e2e-123" },
   },
 });

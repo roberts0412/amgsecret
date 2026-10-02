@@ -50,13 +50,24 @@ que já existem continuam funcionando.
 | `CONTACT_EMAIL` | seu e-mail de contato |
 | `AMAZON_ASSOCIATE_TAG` | sua ID de Associado (ex.: `meusite-20`) — opcional |
 | `ADSENSE_CLIENT_ID` / `ADSENSE_SLOT_ID` | depois da aprovação do AdSense |
+| `OWNER_PANEL_PASSWORD` | senha do seu painel de números em `/painel` (16+ caracteres) — opcional |
 
 > 🔒 Endereços do banco e `APP_SECRET` são senhas: cole só no painel da
 > Netlify, nunca em chats ou prints. Na Vercel, os valores ficam em
 > *Settings → Environment Variables* (ícone de olho).
 
-`APP_URL`, `CONTACT_EMAIL` e AdSense entram no build: ao mudar, faça
-**Trigger deploy**.
+Marque **All scopes** em cada variável (se ficar só em *Functions*, o build não
+as enxerga e falha com "datasource.url is required").
+
+`APP_URL`, `CONTACT_EMAIL`, AdSense e `AMAZON_ASSOCIATE_TAG` (páginas de
+ideias de presente) entram no build: ao mudar, faça **Trigger deploy**.
+
+## Painel do dono
+
+Com `OWNER_PANEL_PASSWORD` definida, `https://seu-dominio/painel` mostra
+grupos criados por dia, participantes, sorteios e brincadeiras — só números,
+nenhum nome ou resultado. O navegador pede usuário (qualquer um) e a senha.
+Sem a variável, a página não existe.
 
 ## 3. Confira no endereço da Netlify
 

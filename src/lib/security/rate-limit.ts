@@ -31,6 +31,8 @@ export const RATE_LIMITS = {
   participantAction: { limit: 60, windowSec: 10 * 60 },
   sendMessage: { limit: 30, windowSec: 10 * 60 },
   wallPost: { limit: 20, windowSec: 10 * 60 },
+  // painel do dono: tentativas de senha por IP
+  ownerPanel: { limit: 10, windowSec: 10 * 60 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitAction = keyof typeof RATE_LIMITS;

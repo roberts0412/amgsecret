@@ -32,6 +32,11 @@ const schema = z.object({
     (v) => (v === "" ? undefined : v),
     z.string().regex(/^[A-Za-z0-9-]{2,64}$/, "AMAZON_ASSOCIATE_TAG deve ser como meusite-20").optional(),
   ),
+  /** Senha do painel do dono (/painel). Sem ela, o painel não existe (404). */
+  OWNER_PANEL_PASSWORD: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(16, "OWNER_PANEL_PASSWORD precisa de pelo menos 16 caracteres").optional(),
+  ),
   /** E-mail de contato exibido na Política de Privacidade (LGPD). */
   CONTACT_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.email().optional()),
   /**

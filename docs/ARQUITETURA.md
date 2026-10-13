@@ -96,7 +96,9 @@ Páginas (URLs amigáveis):
 | `/grupo/[code]/eu` | participante (cookie) | Meu amigo secreto, lista de desejos dele, minha lista, mensagens secretas |
 | `/grupo/[code]/admin` | organizador (cookie) | Status, exclusões, sortear/refazer |
 | `/acesso/[token]` | dono do link | Troca o token do link por cookie e redireciona (token some da URL) |
-| `/amigo-secreto-online`, `/sorteio-amigo-secreto`, `/amigo-secreto-gratis`, `/sorteador-amigo-secreto`, `/amigo-secreto-com-lista-de-desejos` | público | Landing pages de SEO |
+| `/amigo-secreto-online`, `/sorteio-amigo-secreto`, `/amigo-secreto-com-lista-de-desejos`, `/amigo-oculto-online`, `/amigo-da-onca`, `/amigo-chocolate` | público | Landing pages de SEO (as antigas `/amigo-secreto-gratis`, `/sorteador-amigo-secreto` e `/sorteio-amigo-oculto` redirecionam com 301) |
+| `/guias`, `/guias/[slug]` | público | Guias editoriais (conteúdo em `src/lib/guides.ts`) |
+| `/sobre`, `/contato` | público | Páginas institucionais |
 | `/sitemap.xml`, `/robots.txt` | público | SEO (grupos ficam `noindex`) |
 
 Mutações via **Server Actions** (createGroup, joinGroup, confirm, addExclusion,

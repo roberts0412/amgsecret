@@ -10,10 +10,7 @@ describe("páginas de SEO", () => {
       "amigo-da-onca",
       "amigo-oculto-online",
       "amigo-secreto-com-lista-de-desejos",
-      "amigo-secreto-gratis",
       "amigo-secreto-online",
-      "sorteador-amigo-secreto",
-      "sorteio-amigo-oculto",
       "sorteio-amigo-secreto",
     ]);
   });
@@ -36,7 +33,7 @@ describe("páginas de SEO", () => {
   });
 
   it("getSeoPage", () => {
-    expect(getSeoPage("amigo-secreto-gratis")?.keyword).toBe("amigo secreto grátis");
+    expect(getSeoPage("amigo-secreto-online")?.keyword).toBe("amigo secreto online");
     expect(getSeoPage("nao-existe")).toBeUndefined();
   });
 

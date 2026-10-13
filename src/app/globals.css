@@ -49,3 +49,16 @@ select:focus-visible {
     animation-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Anúncio: enquanto o Google não preenche o espaço, o bloco fica recolhido
+ * (altura 0, sem rótulo nem borda) — nada de caixa "Publicidade" vazia.
+ * Não usar display:none: o AdSense precisa da largura do espaço para carregar.
+ */
+.ad-box:not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: none;
+}

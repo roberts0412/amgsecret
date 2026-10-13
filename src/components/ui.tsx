@@ -60,7 +60,11 @@ export function PageShell({ children }: { children: ReactNode }) {
       <main className="flex flex-1 flex-col gap-4 pb-10">{children}</main>
       <footer className="flex flex-col items-center gap-2 py-6 text-center text-xs text-slate-500">
         <p>{SITE_TAGLINE}</p>
-        <nav aria-label="Informações" className="flex gap-4">
+        <nav aria-label="Informações" className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+          <Link href="/guias" className="underline">Guias</Link>
+          <Link href="/ideias-de-presente" className="underline">Ideias de presente</Link>
+          <Link href="/sobre" className="underline">Sobre</Link>
+          <Link href="/contato" className="underline">Contato</Link>
           <Link href="/privacidade" className="underline">Privacidade</Link>
           <Link href="/termos" className="underline">Termos de uso</Link>
         </nav>

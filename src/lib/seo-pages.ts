@@ -71,8 +71,16 @@ export const SEO_PAGES: readonly SeoPage[] = [
           "Regras como \"casais não se tiram\"",
         ],
       },
+      {
+        heading: "Grátis e sem cadastro",
+        paragraphs: [
+          "Criar o grupo, convidar, sortear e usar a lista de desejos e as mensagens não custa nada, e ninguém precisa informar cartão de crédito. Em vez de e-mail e senha, cada participante recebe um link privado e cria um PIN de 6 números para recuperar o acesso caso troque de celular.",
+          "O site se mantém com um anúncio discreto em algumas páginas públicas. Páginas com informações privadas, como o seu resultado e o seu link, nunca têm anúncios.",
+        ],
+      },
     ],
     faq: [
+      { q: "É grátis mesmo?", a: "Sim. Criar o grupo, convidar, sortear e usar a lista de desejos e as mensagens não custa nada, e não pedimos dados de pagamento." },
       { q: "Preciso baixar algum aplicativo?", a: "Não. Tudo funciona no navegador do celular ou do computador — basta abrir o link." },
       { q: "Os participantes precisam de e-mail ou cadastro?", a: "Não. Cada pessoa entra só com o nome e cria um PIN para recuperar o acesso se perder o link." },
       { q: "Dá para fazer com pessoas em cidades diferentes?", a: "Sim. Cada um entra pelo link quando puder; não é preciso estar junto na hora do sorteio." },
@@ -103,6 +111,12 @@ export const SEO_PAGES: readonly SeoPage[] = [
         ],
       },
       {
+        heading: "Os próprios participantes se cadastram",
+        paragraphs: [
+          "Em vez de digitar nome por nome, o organizador envia um link e cada pessoa entra com o próprio nome. O sorteio evita nomes repetidos, mesmo com diferença de acentos ou letras maiúsculas, e o painel mostra quem ainda falta confirmar.",
+        ],
+      },
+      {
         heading: "Precisa refazer?",
         paragraphs: [
           "O organizador pode refazer o sorteio depois de uma confirmação. O resultado anterior é invalidado por completo, e cada pessoa passa a ver apenas o novo resultado.",
@@ -114,84 +128,7 @@ export const SEO_PAGES: readonly SeoPage[] = [
       { q: "O sorteio é realmente aleatório?", a: "Sim. Usamos um gerador de números aleatórios criptograficamente seguro, e todas as combinações válidas têm a mesma chance." },
       { q: "E se ninguém puder tirar determinada pessoa por causa das exclusões?", a: "O sistema detecta que não existe combinação possível e avisa antes de sortear, sem gravar nada." },
       { q: "O organizador consegue ver quem tirou quem?", a: "Não. O organizador vê apenas quantas pessoas já viram o resultado, nunca os pares." },
-    ],
-  },
-  {
-    slug: "amigo-secreto-gratis",
-    keyword: "amigo secreto grátis",
-    title: "Amigo Secreto Grátis: crie o seu sem pagar nada",
-    description:
-      "Organize seu amigo secreto grátis: sorteio, convite pelo WhatsApp, lista de desejos e mensagens anônimas. Sem cadastro e sem cartão de crédito.",
-    h1: "Amigo secreto grátis, completo e sem cadastro",
-    intro:
-      "Organizar o amigo secreto não precisa custar nada. Você cria o grupo, convida quem quiser e faz o sorteio sem informar cartão de crédito e sem criar conta.",
-    sections: [
-      {
-        heading: "O que está incluído de graça",
-        paragraphs: ["Tudo o que um amigo secreto precisa:"],
-        bullets: [
-          "Sorteio automático com exclusões",
-          "Convite e lembretes pelo WhatsApp",
-          "Lista de desejos opcional para cada participante",
-          "Mensagens anônimas entre amigos secretos",
-          "Mural do grupo",
-          "Até 50 participantes por grupo",
-        ],
-      },
-      {
-        heading: "Como mantemos o site grátis",
-        paragraphs: [
-          "O site exibe um anúncio discreto em algumas páginas públicas. Páginas com informações privadas — como o seu resultado e o seu link — nunca têm anúncios.",
-        ],
-      },
-      {
-        heading: "Sem cadastro, com segurança",
-        paragraphs: [
-          "Em vez de e-mail e senha, cada participante recebe um link privado e cria um PIN de 6 números para recuperar o acesso caso troque de celular.",
-        ],
-      },
-    ],
-    faq: [
-      { q: "É grátis mesmo?", a: "Sim. Criar o grupo, convidar, sortear e usar a lista de desejos e as mensagens não custa nada." },
-      { q: "Preciso colocar cartão de crédito?", a: "Não. Não pedimos nenhum dado de pagamento." },
-      { q: "Existe limite de participantes?", a: "Na versão grátis, até 50 pessoas por grupo — suficiente para a maioria das famílias e empresas." },
-      { q: "Meus dados são vendidos?", a: "Não. Guardamos apenas o necessário para o sorteio funcionar; contatos são opcionais e não aparecem para o grupo." },
-    ],
-  },
-  {
-    slug: "sorteador-amigo-secreto",
-    keyword: "sorteador de amigo secreto",
-    title: "Sorteador de Amigo Secreto online e automático",
-    description:
-      "Sorteador de amigo secreto automático: cadastre os participantes pelo link, defina exclusões e sorteie com um toque. Resultado individual e secreto.",
-    h1: "Sorteador de amigo secreto automático",
-    intro:
-      "Um sorteador de amigo secreto resolve o trabalho chato: embaralhar os nomes, conferir se ninguém tirou a si mesmo e avisar cada pessoa sem que o resto do grupo descubra. Aqui tudo isso acontece automaticamente.",
-    sections: [
-      {
-        heading: "Os próprios participantes se cadastram",
-        paragraphs: [
-          "Em vez de digitar nome por nome, o organizador envia um link e cada pessoa entra com o próprio nome. O sorteador evita nomes repetidos, mesmo com diferença de acentos ou letras maiúsculas.",
-        ],
-      },
-      {
-        heading: "Sorteio em um toque",
-        paragraphs: [
-          "Quando todos confirmarem, basta tocar em \"Realizar sorteio\". O painel mostra antes se falta alguém confirmar e se as exclusões permitem o sorteio.",
-        ],
-      },
-      {
-        heading: "Resultado entregue a cada pessoa",
-        paragraphs: [
-          "Ninguém precisa mandar mensagem individual para avisar os pares: cada participante abre o próprio link e toca em \"Revelar\" quando estiver sozinho.",
-        ],
-      },
-    ],
-    faq: [
-      { q: "Posso sortear sem que todos estejam presentes?", a: "Sim. Cada pessoa vê o resultado no próprio celular, quando quiser." },
       { q: "Quem não confirmou entra no sorteio?", a: "Não. Apenas participantes confirmados são sorteados; o painel avisa quem ainda falta." },
-      { q: "Dá para impedir que duas pessoas se tirem?", a: "Sim, com as exclusões — por exemplo, para casais ou irmãos." },
-      { q: "E se alguém sair do grupo depois do sorteio?", a: "O organizador pode reabrir o grupo, ajustar os participantes e sortear novamente." },
     ],
   },
   {
@@ -274,40 +211,7 @@ export const SEO_PAGES: readonly SeoPage[] = [
       { q: "Amigo oculto e amigo secreto são a mesma coisa?", a: "Sim. São nomes diferentes para a mesma brincadeira de sortear quem presenteia quem. Aqui você escolhe o nome que o seu grupo usa." },
       { q: "Precisa instalar aplicativo?", a: "Não. Funciona no navegador do celular ou do computador, pelo link que você manda no WhatsApp." },
       { q: "É grátis mesmo?", a: "Sim. Criar o grupo, convidar, sortear e usar a lista de desejos não custa nada." },
-    ],
-  },
-  {
-    slug: "sorteio-amigo-oculto",
-    keyword: "sorteio de amigo oculto",
-    title: "Sorteio de Amigo Oculto online, rápido e sem erro",
-    description:
-      "Faça o sorteio de amigo oculto pelo celular: ninguém tira a si mesmo, regras para casais e resultado individual. Grátis, com convite pelo WhatsApp.",
-    h1: "Sorteio de amigo oculto sem papelzinho",
-    intro:
-      "Sortear amigo oculto no papel dá trabalho: alguém sempre tira o próprio nome e é preciso refazer tudo. Com o sorteio online, as regras são garantidas pelo sistema e cada pessoa descobre só quem tirou.",
-    cta: "Fazer sorteio de amigo oculto",
-    sections: [
-      {
-        heading: "Regras garantidas",
-        paragraphs: ["O sorteio só é salvo se todas as regras forem cumpridas:"],
-        bullets: [
-          "Ninguém tira a si mesmo",
-          "Cada pessoa tira exatamente um amigo oculto",
-          "Cada pessoa é tirada uma única vez",
-          "Exclusões respeitadas (ex.: casais não se tiram)",
-        ],
-      },
-      {
-        heading: "Resultado só para quem precisa saber",
-        paragraphs: [
-          "Cada participante vê o resultado na própria área, protegida por link privado e PIN. O organizador acompanha quem já viu o resultado, mas nunca quem tirou quem.",
-        ],
-      },
-    ],
-    faq: [
-      { q: "E se alguém não puder se tirar com o marido ou a esposa?", a: "Antes do sorteio, o organizador marca exclusões, como \"casais não se tiram\". O sistema só sorteia uma combinação que respeite todas elas." },
-      { q: "Dá para refazer o sorteio?", a: "Sim. O organizador pode refazer, mas o site avisa antes, porque algumas pessoas podem já ter visto o resultado." },
-      { q: "Quantas pessoas podem participar?", a: "A partir de 3 pessoas. A versão grátis aceita até 50 participantes por grupo." },
+      { q: "Dá para refazer o sorteio de amigo oculto?", a: "Sim. O organizador pode refazer, mas o site avisa antes, porque algumas pessoas podem já ter visto o resultado." },
     ],
   },
   {

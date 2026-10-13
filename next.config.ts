@@ -73,6 +73,14 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  // páginas de SEO quase repetidas foram unificadas: 301 para a página que ficou
+  async redirects() {
+    return [
+      { source: "/amigo-secreto-gratis", destination: "/amigo-secreto-online", permanent: true },
+      { source: "/sorteador-amigo-secreto", destination: "/sorteio-amigo-secreto", permanent: true },
+      { source: "/sorteio-amigo-oculto", destination: "/amigo-oculto-online", permanent: true },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

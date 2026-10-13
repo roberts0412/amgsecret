@@ -13,6 +13,8 @@ declare global {
 /**
  * Unidade do AdSense (100px fixos). Só carrega depois da escolha de cookies:
  * "all" = anúncios normais; "essential" = anúncios NÃO personalizados.
+ * O bloco (com o rótulo "Publicidade") fica oculto até o Google preencher o
+ * anúncio: sem anúncio, não aparece caixa vazia (ver .ad-box em globals.css).
  */
 export function AdSenseUnit({ client, slot }: { client: string; slot: string }) {
   const [consent, setConsent] = useState<Consent | null>(null);
@@ -46,12 +48,17 @@ export function AdSenseUnit({ client, slot }: { client: string; slot: string }) 
         strategy="lazyOnload"
         crossOrigin="anonymous"
       />
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block", width: "100%", height: "100px" }}
-        data-ad-client={client}
-        data-ad-slot={slot}
-      />
+      <aside aria-label="Publicidade" className="ad-box mt-2 rounded-2xl bg-white/70 p-2 ring-1 ring-slate-900/5">
+        <p className="mb-1 text-center text-[11px] tracking-wide text-slate-500 uppercase">Publicidade</p>
+        <div className="h-[100px] overflow-hidden">
+          <ins
+            className="adsbygoogle"
+            style={{ display: "block", width: "100%", height: "100px" }}
+            data-ad-client={client}
+            data-ad-slot={slot}
+          />
+        </div>
+      </aside>
     </>
   );
 }

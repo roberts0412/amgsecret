@@ -5,8 +5,6 @@ import { expect, test } from "./fixtures";
 const SLUGS = [
   "amigo-secreto-online",
   "sorteio-amigo-secreto",
-  "amigo-secreto-gratis",
-  "sorteador-amigo-secreto",
   "amigo-secreto-com-lista-de-desejos",
 ];
 const BASE = "http://localhost:3200";

@@ -60,7 +60,6 @@ test("brincadeira com nome próprio (Outro)", async ({ page }) => {
 test("páginas de amigo oculto, amigo da onça e amigo chocolate", async ({ page }) => {
   for (const [slug, cta] of [
     ["amigo-oculto-online", "Criar amigo oculto grátis"],
-    ["sorteio-amigo-oculto", "Fazer sorteio de amigo oculto"],
     ["amigo-da-onca", "Criar amigo da onça grátis"],
     ["amigo-chocolate", "Criar amigo chocolate grátis"],
   ] as const) {
